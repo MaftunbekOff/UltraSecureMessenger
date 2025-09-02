@@ -104,3 +104,6 @@ export function getQueryClient() {
     return browserQueryClient;
   }
 }
+
+// Export the queryClient instance for direct use
+export const queryClient = getQueryClient();
