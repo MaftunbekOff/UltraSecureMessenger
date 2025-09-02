@@ -244,18 +244,20 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                     if (value && !value.startsWith('@')) {
                       value = '@' + value;
                     }
-                    // Ensure it starts with @group
-                    if (value && value.startsWith('@') && !value.startsWith('@group')) {
-                      const suffix = value.substring(1);
-                      value = '@group' + suffix;
-                    } else if (value && !value.startsWith('@')) {
-                      value = '@group' + value;
+                    // Ensure it has @group suffix
+                    if (value && !value.endsWith('group')) {
+                      if (value.startsWith('@')) {
+                        const username = value.substring(1);
+                        value = '@' + username + 'group';
+                      } else {
+                        value = '@' + value + 'group';
+                      }
                     }
                     setGroupForm(prev => ({ ...prev, username: value }));
                   }}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Guruh username @group bilan boshlanishi kerak
+                  Guruh username oxirida group bilan tugashi kerak
                 </p>
               </div>
             )}
@@ -302,7 +304,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 onClick={() => createGroupMutation.mutate(groupForm)}
                 disabled={
                   !groupForm.name.trim() || 
-                  (!groupForm.isPrivate && (!groupForm.username.trim() || !groupForm.username.startsWith('@group'))) ||
+                  (!groupForm.isPrivate && (!groupForm.username.trim() || !groupForm.username.endsWith('group'))) ||
                   createGroupMutation.isPending
                 }
               >
@@ -345,18 +347,20 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                     if (value && !value.startsWith('@')) {
                       value = '@' + value;
                     }
-                    // Ensure it starts with @channel
-                    if (value && value.startsWith('@') && !value.startsWith('@channel')) {
-                      const suffix = value.substring(1);
-                      value = '@channel' + suffix;
-                    } else if (value && !value.startsWith('@')) {
-                      value = '@channel' + value;
+                    // Ensure it has @channel suffix
+                    if (value && !value.endsWith('channel')) {
+                      if (value.startsWith('@')) {
+                        const username = value.substring(1);
+                        value = '@' + username + 'channel';
+                      } else {
+                        value = '@' + value + 'channel';
+                      }
                     }
                     setChannelForm(prev => ({ ...prev, username: value }));
                   }}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Kanal username @channel bilan boshlanishi kerak
+                  Kanal username oxirida channel bilan tugashi kerak
                 </p>
               </div>
             )}
@@ -403,7 +407,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 onClick={() => createChannelMutation.mutate(channelForm)}
                 disabled={
                   !channelForm.name.trim() || 
-                  (!channelForm.isPrivate && (!channelForm.username.trim() || !channelForm.username.startsWith('@channel'))) ||
+                  (!channelForm.isPrivate && (!channelForm.username.trim() || !channelForm.username.endsWith('channel'))) ||
                   createChannelMutation.isPending
                 }
               >
