@@ -1,25 +1,18 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { toast } from "@/hooks/use-toast";
 import { 
   Users, 
-  Plus, 
   Search, 
   Settings, 
   Crown,
   MessageCircle,
-  Lock,
-  Globe
+  Lock
 } from "lucide-react";
 
 interface Group {
@@ -38,16 +31,7 @@ interface Group {
 
 export default function GroupsManager() {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-
-  // Form state for creating groups
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    isPrivate: false,
-  });
 
   // Fetch groups only
   const { data: allGroups = [], isLoading } = useQuery({
@@ -61,31 +45,6 @@ export default function GroupsManager() {
 
   // Filter to show only groups (not channels)
   const groups = allGroups.filter((group: Group) => group.isGroup && !group.isChannel);
-
-  // Create group mutation
-  const createGroupMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      const response = await fetch("/api/chats", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: data.name,
-          description: data.description,
-          isGroup: true,
-          isChannel: false,
-          isPrivate: data.isPrivate,
-        }),
-      });
-      if (!response.ok) throw new Error("Failed to create group");
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
-      setIsCreateOpen(false);
-      setFormData({ name: "", description: "", isPrivate: false });
-      toast({ title: "Guruh yaratildi" });
-    },
-  });
 
   const filteredGroups = groups.filter((group: Group) => 
     group.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -156,76 +115,7 @@ export default function GroupsManager() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Guruhlar</h2>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Guruh yaratish
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Yangi guruh yaratish</DialogTitle>
-              </DialogHeader>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Guruh nomi</Label>
-                  <Input
-                    id="name"
-                    placeholder="Guruh nomini kiriting"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Tavsif (ixtiyoriy)</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Qisqa tavsif yozing..."
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="is-private"
-                    checked={formData.isPrivate}
-                    onCheckedChange={(checked) => 
-                      setFormData(prev => ({ ...prev, isPrivate: checked }))
-                    }
-                  />
-                  <Label htmlFor="is-private" className="flex items-center gap-2">
-                    {formData.isPrivate ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-                    {formData.isPrivate ? "Maxfiy guruh" : "Ochiq guruh"}
-                  </Label>
-                </div>
-
-                <div className="flex gap-2 pt-4">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setIsCreateOpen(false)}
-                  >
-                    Bekor qilish
-                  </Button>
-                  <Button
-                    className="flex-1"
-                    onClick={() => createGroupMutation.mutate(formData)}
-                    disabled={!formData.name.trim() || createGroupMutation.isPending}
-                  >
-                    {createGroupMutation.isPending ? "Yaratilmoqda..." : "Yaratish"}
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+        <h2 className="text-lg font-semibold mb-4">Guruhlar</h2>
 
         {/* Search */}
         <div className="relative">
@@ -256,7 +146,7 @@ export default function GroupsManager() {
             <p className="text-muted-foreground text-sm">
               {searchQuery 
                 ? "Boshqa nom bilan qidirib ko'ring" 
-                : "Yangi guruh yaratish uchun yuqoridagi 'Guruh yaratish' tugmasini bosing"
+                : "Hech qanday guruh mavjud emas"
               }
             </p>
           </div>
