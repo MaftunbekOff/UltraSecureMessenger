@@ -2,34 +2,18 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
 import { 
   Search, 
   UserPlus, 
-  MoreVertical, 
-  Star, 
-  MessageCircle, 
-  Phone, 
-  Video, 
-  Ban, 
-  Flag, 
   Users,
-  Filter,
-  Download,
-  Upload,
-  UserMinus,
-  Eye,
-  EyeOff
+  MessageCircle,
+  Plus
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface Contact {
   id: string;
@@ -54,6 +38,7 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
+  const [userSearchQuery, setUserSearchQuery] = useState("");
 
   // Fetch contacts
   const { data: contacts = [], isLoading } = useQuery({
@@ -65,7 +50,11 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
     },
   });
 
-  
+  // Search users for new contact
+  const { data: searchResults = [] } = useQuery({
+    queryKey: ["/api/users/search", userSearchQuery],
+    enabled: userSearchQuery.length > 0,
+  });
 
   // Create direct chat mutation
   const createDirectChatMutation = useMutation({
@@ -117,53 +106,31 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
     return `${diffDays} kun oldin`;
   };
 
-  const ContactItem = ({ contact }: { contact: Contact }) => (
-    <div 
-      className="flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
-      onClick={() => handleStartChat(contact.id)}
-    >
-      <div className="relative">
-        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
-          {contact.displayName?.charAt(0)?.toUpperCase() || contact.username?.charAt(0)?.toUpperCase() || "?"}
-        </div>
-        {contact.isOnline && (
-          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-        )}
-      </div>
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInHours = Math.abs(now.getTime() - date.getTime()) / 36e5;
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between">
-          <h3 className="font-medium text-sm truncate">
-            {contact.nickname || contact.displayName}
-          </h3>
-          <span className="text-xs text-gray-500">
-            {contact.isOnline ? "Online" : getLastSeenText(contact.lastSeen)}
-          </span>
-        </div>
-
-        <p className="text-xs text-gray-600 truncate mt-1">
-          @{contact.username}
-        </p>
-
-        <div className="flex items-center gap-1 mt-1">
-          <MessageCircle className="h-4 w-4" />
-          <span className="text-xs text-gray-400">Shaxsiy</span>
-        </div>
-      </div>
-    </div>
-  );
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString('uz-UZ', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    return date.toLocaleDateString('uz-UZ', {
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="p-2 border-b">
-        <h2 className="text-lg font-semibold mb-2">Kontaktlar</h2>
-
-        {/* Search */}
+    <div className="flex flex-col h-full bg-white">
+      {/* Search */}
+      <div className="p-3 border-b">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Kontaktlarni qidiring..."
+            placeholder="Kontaktlarni qidirish..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -171,9 +138,52 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
         </div>
       </div>
 
+      {/* New contact section */}
+      <div className="px-3 mb-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Yangi kontakt qidirish..."
+            value={userSearchQuery}
+            onChange={(e) => setUserSearchQuery(e.target.value)}
+            className="pl-10 h-9"
+          />
+        </div>
+
+        {/* Search results */}
+        {searchResults.length > 0 && (
+          <div className="mt-2 border rounded-lg bg-white shadow-sm">
+            <ScrollArea className="max-h-32">
+              {searchResults.map((foundUser) => (
+                <div
+                  key={foundUser.id}
+                  className="flex items-center justify-between p-2 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+                  onClick={() => handleStartChat(foundUser.id)}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
+                      {foundUser.firstName?.charAt(0) || foundUser.email.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">
+                        {foundUser.displayName || foundUser.firstName || foundUser.email}
+                      </p>
+                      <p className="text-xs text-gray-500">@{foundUser.username || foundUser.email}</p>
+                    </div>
+                  </div>
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </ScrollArea>
+          </div>
+        )}
+      </div>
+
       {/* Contacts List */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="space-y-1">
+      <ScrollArea className="flex-1">
+        <div className="space-y-1 px-2">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
@@ -181,27 +191,51 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
           ) : filteredContacts.length === 0 ? (
             <div className="text-center py-8 px-4">
               <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-gray-500">
-                {searchQuery ? "Kontakt topilmadi" : "Hali kontaktlar yo'q"}
-              </p>
-              <p className="text-xs text-gray-400">
-                {searchQuery ? "Boshqa nom bilan qidirib ko'ring" : "Kontakt qo'shish uchun Quick Actions dan foydalaning"}
-              </p>
+              <p className="text-sm text-gray-500">Hali kontaktlar yo'q</p>
+              <p className="text-xs text-gray-400">Yangi kontakt qidirish uchun yuqorida qidiring</p>
             </div>
           ) : (
             filteredContacts.map((contact) => (
-              <ContactItem key={contact.id} contact={contact} />
+              <div
+                key={contact.id}
+                onClick={() => handleStartChat(contact.id)}
+                className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
+              >
+                {/* Contact avatar */}
+                <div className="relative">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
+                    {(contact.displayName || contact.username || contact.email || "U").charAt(0).toUpperCase()}
+                  </div>
+                  {contact.isOnline && (
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                  )}
+                </div>
+
+                {/* Contact info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium text-sm truncate">
+                      {contact.nickname || contact.displayName || contact.username || contact.email}
+                    </h3>
+                    <span className="text-xs text-gray-500">
+                      {contact.isOnline ? "Online" : getLastSeenText(contact.lastSeen)}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-gray-600 truncate mt-1">
+                    @{contact.username || contact.email}
+                  </p>
+
+                  <div className="flex items-center gap-1 mt-1">
+                    <MessageCircle className="h-4 w-4" />
+                    <span className="text-xs text-gray-400">Shaxsiy</span>
+                  </div>
+                </div>
+              </div>
             ))
           )}
         </div>
-      </div>
-
-      {/* Stats Footer */}
-      <div className="p-2 border-t bg-muted/30">
-        <div className="text-center text-sm text-muted-foreground">
-          Jami kontaktlar: {contacts.length}
-        </div>
-      </div>
+      </ScrollArea>
     </div>
   );
 }
