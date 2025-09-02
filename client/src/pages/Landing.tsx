@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { MessageCircle, Users, User as UserIcon, Search, Settings, LogOut, Bell, Star } from "lucide-react";
+import { MessageCircle, Users, User as UserIcon, Search, Settings, LogOut, Bell, Star, Lock, Zap, Globe, Shield } from "lucide-react";
 import { OnboardingFlow } from "@/components/OnboardingFlow";
 import { QuickActions } from "@/components/QuickActions";
 import { ThemeCustomizer } from "@/components/ThemeCustomizer";

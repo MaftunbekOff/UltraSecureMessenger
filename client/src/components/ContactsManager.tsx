@@ -19,7 +19,7 @@ import {
   MessageCircle, 
   Phone, 
   Video, 
-  Block, 
+  Ban, 
   Flag, 
   Users,
   Filter,
@@ -245,7 +245,7 @@ export function ContactsManager() {
               onClick={() => blockContactMutation.mutate(contact.id)}
               className="text-destructive"
             >
-              <Block className="h-4 w-4 mr-2" />
+              <Ban className="h-4 w-4 mr-2" />
               Bloklash
             </DropdownMenuItem>
           </DropdownMenuContent>

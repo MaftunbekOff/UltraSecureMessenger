@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ChatSidebar } from "@/components/ChatSidebar";
 import { ChatArea } from "@/components/ChatArea";
 import PerformanceDashboard from "@/components/PerformanceDashboard";
-import { ProfileSettings } from "@/components/ProfileSettings";
+import ProfileSettings from "@/components/ProfileSettings";
 import { OnboardingFlow } from "@/components/OnboardingFlow";
 import { QuickActions } from "@/components/QuickActions";
 import { ThemeCustomizer } from "@/components/ThemeCustomizer";
