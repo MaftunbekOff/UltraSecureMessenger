@@ -40,7 +40,7 @@ interface Group {
   unreadCount: number;
 }
 
-export function GroupsManager() {
+export default function GroupsManager() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
