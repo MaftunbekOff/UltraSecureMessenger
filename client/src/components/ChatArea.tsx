@@ -77,6 +77,11 @@ export function ChatArea({ chatId, onBack }: ChatAreaProps) {
           <p className="text-muted-foreground mb-6">
             Select a conversation to start messaging securely with end-to-end encryption.
           </p>
+          <div className="text-sm text-muted-foreground">
+            <p>✓ Real-time messaging with WebSocket</p>
+            <p>✓ Offline message queue</p>
+            <p>✓ Virtual scrolling for performance</p>
+          </div>
         </div>
       </div>
     );

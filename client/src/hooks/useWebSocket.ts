@@ -15,6 +15,10 @@ export function useWebSocket() {
         token: 'user-token', // Get from auth context
       },
       transports: ['websocket', 'polling'],
+      compression: true,
+      forceNew: true,
+      upgrade: true,
+      rememberUpgrade: true,
     });
 
     newSocket.on('connect', () => {
