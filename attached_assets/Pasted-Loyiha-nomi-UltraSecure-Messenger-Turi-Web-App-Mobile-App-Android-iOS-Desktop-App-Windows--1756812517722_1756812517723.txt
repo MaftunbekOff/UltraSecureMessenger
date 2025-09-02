@@ -1,0 +1,107 @@
+Loyiha nomi: UltraSecure Messenger
+Turi: Web App + Mobile App (Android, iOS) + Desktop App (Windows, Linux, MacOS)
+Maqsad: Past internet tezligida ham ishlaydigan, tezkor, xavfsiz va maxfiy messenjer yaratish.
+
+⚡ Asosiy funksiyalar:
+
+Real-time chat (matnli xabarlar, voice message, video message).
+
+End-to-End Encryption – Signal Protocol yoki Double Ratchet algoritmi asosida.
+
+Past internet tezligida optimizatsiya – xabarlarni siqish (gzip, Brotli) va offline queue.
+
+Voice & Video Call – WebRTC orqali.
+
+Group Chat & Channels (Telegram’dagi kabi).
+
+Bots & API Integration (third-party developer’lar uchun).
+
+Media Sharing (foto, video, fayl, audio).
+
+Cloud sync – barcha qurilmalarda bitta hisob.
+
+Multi-device login – bitta akkauntni bir nechta qurilmada ishlatish.
+
+User Status (online, last seen, typing...).
+
+Message Reactions & Reply.
+
+Disappearing Messages – vaqt tugaganda o‘chadigan xabarlar.
+
+Self-destruct media – faqat bir marta ko‘rinadigan rasm/video.
+
+Profile customization – avatar, bio, nick.
+
+User blocking & reporting.
+
+Ban tizimi – administrator tomonidan spammerlarga ban.
+
+Spam-filter AI – zararli kontentni aniqlash.
+
+Search & Hashtags.
+
+Push notifications (mobil va web).
+
+Message edit & delete.
+
+Dark/Light Mode (UI uchun).
+
+Custom Menus – foydalanuvchi uchun shaxsiy menyu.
+
+Offline Mode – internet qaytganida xabarni avtomatik yuborish.
+
+2FA Login (Two-Factor Authentication).
+
+Anonymous Chat / Secret Chat.
+
+🖥️ UI/UX dizayn:
+
+Minimalistik va tezkor.
+
+Telegram + Signal + WhatsApp UI gibridi.
+
+Yon panelda (sidebar) – Chatlar, Guruhlar, Kanallar, Sozlamalar.
+
+Chat oynasida – avatar, status, emoji, voice message tugmalari.
+
+Custom menyular – foydalanuvchi o‘ziga kerakli shortcut yaratishi mumkin.
+
+Responsive dizayn – web, mobile va desktop’da bir xil ishlaydi.
+
+🛠️ Texnologiyalar:
+
+Frontend: React (Web), React Native (Mobile), Electron (Desktop).
+
+Backend: Node.js (NestJS yoki Express).
+
+Database: PostgreSQL + Redis (cache uchun).
+
+Real-time: WebSocket (Socket.IO).
+
+Media server: WebRTC + TURN/STUN serverlar.
+
+Encryption: Signal Protocol / Libsodium.
+
+Hosting: AWS / Google Cloud / DigitalOcean.
+
+DevOps: Docker + Kubernetes.
+
+🔒 Xavfsizlik:
+
+End-to-End Encryption (faqat foydalanuvchilar o‘qiy oladi).
+
+Zero-knowledge storage – serverda foydalanuvchi ma’lumotlari ochiq ko‘rinmaydi.
+
+2FA (SMS / Email / Authenticator).
+
+Spam-botlarni AI orqali aniqlash.
+
+Admin panel orqali foydalanuvchilarni boshqarish.
+
+🌍 Platformalar:
+
+Web App – brauzer orqali ishlaydi.
+
+Mobile App – Android (Kotlin/React Native), iOS (Swift/React Native).
+
+Desktop App – Windows, Linux, MacOS (Electron).
