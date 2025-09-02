@@ -155,7 +155,16 @@ export default function Chat() {
         );
       case 'achievements':
         return (
-          <AchievementSystem onClose={() => setCurrentView('chat')} />
+          <AchievementSystem 
+            userStats={{
+              messagesCount: 0,
+              friendsCount: 0,
+              groupsCreated: 0,
+              reactionsGiven: 0,
+              has2FA: false,
+              profileComplete: false
+            }}
+          />
         );
       default:
         return renderChatLayout();

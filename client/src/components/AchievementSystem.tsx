@@ -78,11 +78,22 @@ const LEVELS = [
   { level: 5, minPoints: 1000, title: 'Messenger ustasi', color: 'bg-yellow-500' },
 ];
 
-export function AchievementSystem({ userStats }: { userStats: any }) {
+export function AchievementSystem({ userStats = {} }: { userStats?: any }) {
   const [achievements, setAchievements] = useState(ACHIEVEMENTS);
   const [totalPoints, setTotalPoints] = useState(0);
   const [currentLevel, setCurrentLevel] = useState(LEVELS[0]);
   const [newUnlocks, setNewUnlocks] = useState<string[]>([]);
+
+  // Default user stats if not provided
+  const defaultStats = {
+    messagesCount: 0,
+    friendsCount: 0,
+    groupsCreated: 0,
+    reactionsGiven: 0,
+    has2FA: false,
+    profileComplete: false,
+    ...userStats
+  };
 
   useEffect(() => {
     // Check for new achievements based on user stats
@@ -92,26 +103,26 @@ export function AchievementSystem({ userStats }: { userStats: any }) {
 
       switch (achievement.id) {
         case 'first_message':
-          unlocked = userStats.messagesCount > 0;
+          unlocked = defaultStats.messagesCount > 0;
           break;
         case 'social_butterfly':
-          progress = userStats.friendsCount;
-          unlocked = userStats.friendsCount >= 10;
+          progress = defaultStats.friendsCount;
+          unlocked = defaultStats.friendsCount >= 10;
           break;
         case 'chat_master':
-          progress = userStats.messagesCount;
-          unlocked = userStats.messagesCount >= 100;
+          progress = defaultStats.messagesCount;
+          unlocked = defaultStats.messagesCount >= 100;
           break;
         case 'group_creator':
-          progress = userStats.groupsCreated;
-          unlocked = userStats.groupsCreated >= 5;
+          progress = defaultStats.groupsCreated;
+          unlocked = defaultStats.groupsCreated >= 5;
           break;
         case 'reaction_lover':
-          progress = userStats.reactionsGiven;
-          unlocked = userStats.reactionsGiven >= 50;
+          progress = defaultStats.reactionsGiven;
+          unlocked = defaultStats.reactionsGiven >= 50;
           break;
         case 'security_champion':
-          unlocked = userStats.has2FA && userStats.profileComplete;
+          unlocked = defaultStats.has2FA && defaultStats.profileComplete;
           break;
       }
 
@@ -136,7 +147,7 @@ export function AchievementSystem({ userStats }: { userStats: any }) {
       points >= level.minPoints ? level : current
     );
     setCurrentLevel(level);
-  }, [userStats]);
+  }, [defaultStats, userStats]);
 
   const nextLevel = LEVELS.find(l => l.level > currentLevel.level);
   const progressToNext = nextLevel 
