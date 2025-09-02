@@ -12,6 +12,7 @@ import { notificationManager } from "@/utils/notifications";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Toaster } from "@/components/ui/toaster";
 import { Settings, LogOut, User, Activity, Palette, Trophy } from "lucide-react";
 import {
   DropdownMenu,
