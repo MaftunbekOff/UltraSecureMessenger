@@ -167,8 +167,7 @@ export default function GroupsManager() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Guruhlar</h2>
+        <div className="flex items-center justify-end mb-4">
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
