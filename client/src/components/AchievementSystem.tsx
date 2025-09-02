@@ -94,8 +94,7 @@ export function AchievementSystem({ userStats = {}, onClose }: { userStats?: any
     ...userStats
   };
 
-  useEffect(() => {
-    // Check for new achievements based on user stats
+  const checkAchievements = () => {
     const updatedAchievements = achievements.map(achievement => {
       let unlocked = achievement.unlocked;
       let progress = achievement.progress || 0;
@@ -146,7 +145,11 @@ export function AchievementSystem({ userStats = {}, onClose }: { userStats?: any
       points >= level.minPoints ? level : current
     );
     setCurrentLevel(level);
-  }, [defaultStats, userStats]);
+  };
+
+  useEffect(() => {
+    checkAchievements();
+  }, [userStats]);
 
   const nextLevel = LEVELS.find(l => l.level > currentLevel.level);
   const progressToNext = nextLevel 
