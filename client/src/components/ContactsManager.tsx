@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -140,58 +139,56 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
 
       {/* Contacts List */}
       <ScrollArea className="flex-1">
-        <div className="space-y-1">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-            </div>
-          ) : filteredContacts.length === 0 ? (
-            <div className="text-center py-8 px-4">
-              <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-gray-500">Hali kontaktlar yo'q</p>
-              <p className="text-xs text-gray-400">Yangi kontakt qidirish uchun yuqorida qidiring</p>
-            </div>
-          ) : (
-            filteredContacts.map((contact) => (
-              <div
-                key={contact.id}
-                onClick={() => handleStartChat(contact.id)}
-                className="flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors hover:bg-gray-50"
-              >
-                {/* Contact avatar */}
-                <div className="relative">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
-                    {(contact.displayName || contact.username || contact.email || "U").charAt(0).toUpperCase()}
-                  </div>
-                  {contact.isOnline && (
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-                  )}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+          </div>
+        ) : filteredContacts.length === 0 ? (
+          <div className="text-center py-8 px-4">
+            <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-sm text-gray-500">Kontaktlar yo'q</p>
+            <p className="text-xs text-gray-400">Yangi kontakt qo'shish uchun qidiring</p>
+          </div>
+        ) : (
+          filteredContacts.map((contact) => (
+            <div
+              key={contact.id}
+              onClick={() => handleStartChat(contact.id)}
+              className="flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors hover:bg-gray-50"
+            >
+              {/* Contact avatar */}
+              <div className="relative">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
+                  {(contact.displayName || contact.username || contact.email || "U").charAt(0).toUpperCase()}
+                </div>
+                {contact.isOnline && (
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                )}
+              </div>
+
+              {/* Contact info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-sm truncate">
+                    {contact.nickname || contact.displayName || contact.username || contact.email}
+                  </h3>
+                  <span className="text-xs text-gray-500">
+                    {contact.isOnline ? "Online" : getLastSeenText(contact.lastSeen)}
+                  </span>
                 </div>
 
-                {/* Contact info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-sm truncate">
-                      {contact.nickname || contact.displayName || contact.username || contact.email}
-                    </h3>
-                    <span className="text-xs text-gray-500">
-                      {contact.isOnline ? "Online" : getLastSeenText(contact.lastSeen)}
-                    </span>
-                  </div>
+                <p className="text-xs text-gray-600 truncate mt-1">
+                  @{contact.username || contact.email}
+                </p>
 
-                  <p className="text-xs text-gray-600 truncate mt-1">
-                    @{contact.username || contact.email}
-                  </p>
-
-                  <div className="flex items-center gap-1 mt-1">
-                    <MessageCircle className="h-4 w-4" />
-                    <span className="text-xs text-gray-400">Shaxsiy</span>
-                  </div>
+                <div className="flex items-center gap-1 mt-1">
+                  <MessageCircle className="h-4 w-4" />
+                  <span className="text-xs text-gray-400">Shaxsiy</span>
                 </div>
               </div>
-            ))
-          )}
-        </div>
+            </div>
+          ))
+        )}
       </ScrollArea>
     </div>
   );
