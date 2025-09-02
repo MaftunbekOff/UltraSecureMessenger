@@ -251,12 +251,7 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(
         and(
-          or(
-            like(users.displayName, `%${query}%`),
-            like(users.firstName, `%${query}%`),
-            like(users.lastName, `%${query}%`),
-            like(users.email, `%${query}%`)
-          ),
+          like(users.username, `%${query}%`),
           sql`${users.id} != ${excludeUserId}`
         )
       )
