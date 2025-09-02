@@ -8,7 +8,6 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { 
   Users, 
-  Search, 
   Settings, 
   Crown,
   MessageCircle,
@@ -35,7 +34,6 @@ interface GroupsManagerProps {
 
 export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
   const { user } = useAuth();
-  const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch groups only
   const { data: allGroups = [], isLoading } = useQuery({
@@ -49,10 +47,6 @@ export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
 
   // Filter to show only groups (not channels)
   const groups = allGroups.filter((group: Group) => group.isGroup && !group.isChannel);
-
-  const filteredGroups = groups.filter((group: Group) => 
-    group.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   const GroupItem = ({ group }: { group: Group }) => (
     <Card 
@@ -122,18 +116,7 @@ export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold mb-4">Guruhlar</h2>
-
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Guruhlarni qidiring..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+        <h2 className="text-lg font-semibold">Guruhlar</h2>
       </div>
 
       {/* Groups List */}
@@ -142,24 +125,19 @@ export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
-        ) : filteredGroups.length === 0 ? (
+        ) : groups.length === 0 ? (
           <div className="text-center py-8">
             <div className="mb-4">
               <Users className="h-12 w-12 text-muted-foreground mx-auto" />
             </div>
-            <h3 className="font-medium mb-2">
-              {searchQuery ? "Natija topilmadi" : "Guruhlar yo'q"}
-            </h3>
+            <h3 className="font-medium mb-2">Guruhlar yo'q</h3>
             <p className="text-muted-foreground text-sm">
-              {searchQuery 
-                ? "Boshqa nom bilan qidirib ko'ring" 
-                : "Hech qanday guruh mavjud emas"
-              }
+              Hech qanday guruh mavjud emas
             </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredGroups.map((group: Group) => (
+            {groups.map((group: Group) => (
               <GroupItem key={group.id} group={group} />
             ))}
           </div>
@@ -169,7 +147,7 @@ export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
       {/* Stats Footer */}
       <div className="p-4 border-t bg-muted/30">
         <div className="text-center text-sm text-muted-foreground">
-          Jami guruhlar: {filteredGroups.length}
+          Jami guruhlar: {groups.length}
         </div>
       </div>
     </div>
