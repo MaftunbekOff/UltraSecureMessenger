@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Camera, Lock, Bell, Shield, Globe, Phone, Mail, MapPin, Palette } from "lucide-react";
+import { Camera, Lock, Bell, Shield, Globe, Phone, Mail, MapPin, Palette, X, User, Eye, Check, Upload } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { ThemeCustomizer } from "@/components/ThemeCustomizer";

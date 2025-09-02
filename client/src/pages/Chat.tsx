@@ -248,7 +248,6 @@ export default function Chat() {
                       <Activity className="h-4 w-4 mr-2" />
                       Samaradorlik
                     </DropdownMenuItem>
-                    
                     <DropdownMenuItem onClick={() => setCurrentView('achievements')}>
                       <Trophy className="h-4 w-4 mr-2" />
                       Yutuqlar
@@ -320,7 +319,6 @@ export default function Chat() {
                     <Activity className="h-4 w-4 mr-2" />
                     Samaradorlik
                   </DropdownMenuItem>
-                  
                   <DropdownMenuItem onClick={() => setCurrentView('achievements')}>
                     <Trophy className="h-4 w-4 mr-2" />
                     Yutuqlar
