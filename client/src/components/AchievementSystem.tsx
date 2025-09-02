@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -94,7 +94,7 @@ export function AchievementSystem({ userStats = {}, onClose }: { userStats?: any
     ...userStats
   };
 
-  const checkAchievements = () => {
+  const checkAchievements = useCallback(() => {
     const updatedAchievements = achievements.map(achievement => {
       let unlocked = achievement.unlocked;
       let progress = achievement.progress || 0;
@@ -145,11 +145,11 @@ export function AchievementSystem({ userStats = {}, onClose }: { userStats?: any
       points >= level.minPoints ? level : current
     );
     setCurrentLevel(level);
-  };
+  }, [achievements, userStats]);
 
   useEffect(() => {
     checkAchievements();
-  }, [userStats]);
+  }, [checkAchievements]);
 
   const nextLevel = LEVELS.find(l => l.level > currentLevel.level);
   const progressToNext = nextLevel 
