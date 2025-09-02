@@ -1,41 +1,27 @@
-import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { Router, Route, Switch } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { useAuth } from "@/hooks/useAuth";
-import Landing from "@/pages/Landing";
 import Chat from "@/pages/Chat";
+import Landing from "@/pages/Landing";
 import LoginPage from "@/components/LoginPage";
 import NotFound from "@/pages/not-found";
 
-function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  return (
-    <Switch>
-      {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
-      ) : (
-        <>
-          <Route path="/" component={Chat} />
-        </>
-      )}
-      <Route path="/login" component={LoginPage} />
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
+const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <Router>
+          <Switch>
+            <Route path="/" component={Landing} />
+            <Route path="/login" component={LoginPage} />
+            <Route path="/chat" component={Chat} />
+            <Route component={NotFound} />
+          </Switch>
+        </Router>
+        <Toaster />
       </ThemeProvider>
     </QueryClientProvider>
   );

@@ -160,7 +160,17 @@ export default function Chat() {
         );
       case 'theme':
         return (
-          <ThemeCustomizer onClose={() => setCurrentView('chat')} />
+          <div className="h-screen flex flex-col bg-background">
+            <div className="flex justify-between items-center p-4 border-b bg-white">
+              <h2 className="text-xl font-semibold">Mavzu sozlamalari</h2>
+              <Button variant="outline" onClick={() => setCurrentView('chat')}>
+                Chatga qaytish
+              </Button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <ThemeCustomizer />
+            </div>
+          </div>
         );
       case 'achievements':
         return (

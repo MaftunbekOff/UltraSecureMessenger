@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Palette, Image, Smile } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { useTheme } from "@/components/ThemeProvider";
+import { Palette, Image, Smile, Sun, Moon } from "lucide-react";
 
 const COLOR_THEMES = [
   { name: "Klassik", primary: "#3b82f6", secondary: "#64748b", accent: "#f59e0b" },
@@ -32,6 +34,7 @@ const EMOJI_PACKS = [
 ];
 
 export function ThemeCustomizer({ onSave }: { onSave?: (theme: any) => void }) {
+  const { theme, toggleTheme } = useTheme();
   const [selectedTheme, setSelectedTheme] = useState(COLOR_THEMES[0]);
   const [selectedBackground, setSelectedBackground] = useState(CHAT_BACKGROUNDS[0]);
   const [selectedEmojiPack, setSelectedEmojiPack] = useState(EMOJI_PACKS[0]);
@@ -59,6 +62,31 @@ export function ThemeCustomizer({ onSave }: { onSave?: (theme: any) => void }) {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Theme Mode Toggle */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+              Rejim
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="theme-mode">Dark rejim</Label>
+                <p className="text-sm text-muted-foreground">
+                  Interfeys rangini o'zgartirish
+                </p>
+              </div>
+              <Switch
+                id="theme-mode"
+                checked={theme === 'dark'}
+                onCheckedChange={toggleTheme}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         <Tabs defaultValue="colors" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="colors">Ranglar</TabsTrigger>

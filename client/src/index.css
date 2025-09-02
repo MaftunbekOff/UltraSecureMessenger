@@ -44,7 +44,7 @@
 .dark {
   --background: hsl(222.2 84% 4.9%);
   --foreground: hsl(210 40% 98%);
-  --card: hsl(222.2 84% 4.9%);
+  --card: hsl(222.2 84% 6%);
   --card-foreground: hsl(210 40% 98%);
   --popover: hsl(222.2 84% 4.9%);
   --popover-foreground: hsl(210 40% 98%);
@@ -54,13 +54,13 @@
   --secondary-foreground: hsl(210 40% 98%);
   --muted: hsl(217.2 32.6% 17.5%);
   --muted-foreground: hsl(215 20.2% 65.1%);
-  --accent: hsl(142.1 70.6% 45.3%);
+  --accent: hsl(217.2 32.6% 17.5%);
   --accent-foreground: hsl(210 40% 98%);
   --destructive: hsl(0 62.8% 30.6%);
   --destructive-foreground: hsl(210 40% 98%);
   --border: hsl(217.2 32.6% 17.5%);
   --input: hsl(217.2 32.6% 17.5%);
-  --ring: hsl(224.3 76.3% 94.1%);
+  --ring: hsl(217.2 91.2% 59.8%);
   --chart-1: hsl(217.2 91.2% 59.8%);
   --chart-2: hsl(142.1 70.6% 45.3%);
   --chart-3: hsl(42.0290 92.8251% 56.2745%);
@@ -73,7 +73,7 @@
   --sidebar-accent: hsl(217.2 32.6% 17.5%);
   --sidebar-accent-foreground: hsl(210 40% 98%);
   --sidebar-border: hsl(217.2 32.6% 17.5%);
-  --sidebar-ring: hsl(224.3 76.3% 94.1%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
   --font-sans: "Inter", system-ui, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
@@ -83,6 +83,19 @@
 @layer base {
   * {
     @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  html {
+    color-scheme: light;
+  }
+  
+  html.dark {
+    color-scheme: dark;
   }
 
   body {
