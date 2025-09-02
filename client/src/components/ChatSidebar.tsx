@@ -9,7 +9,6 @@ import {
   MessageCircle,
   Users,
   Settings,
-  Plus,
   Hash,
   Clock,
   Search
@@ -50,40 +49,10 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
-  const [userSearchQuery, setUserSearchQuery] = useState("");
   // Fetch user's chats
   const { data: chats = [], isLoading: isChatsLoading } = useQuery<ChatWithExtras[]>({
     queryKey: ["/api/chats"],
     refetchInterval: 30000,
-  });
-
-  // Search users for new chat
-  const { data: searchResults = [] } = useQuery<User[]>({
-    queryKey: ["/api/users/search", userSearchQuery],
-    enabled: userSearchQuery.length > 0,
-  });
-
-  // Create new chat
-  const createChatMutation = useMutation({
-    mutationFn: async (participantId: string) => {
-      const response = await fetch("/api/chats", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ participantId }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create chat");
-      }
-
-      return response.json();
-    },
-    onSuccess: (newChat) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
-      onChatSelect(newChat.id);
-      setUserSearchQuery("");
-    },
   });
 
   const filteredChats = chats?.filter(chat => {
@@ -138,48 +107,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
         </div>
       </div>
 
-      {/* New chat section */}
-      <div className="px-3 mb-2">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Yangi chat boshlash..."
-            value={userSearchQuery}
-            onChange={(e) => setUserSearchQuery(e.target.value)}
-            className="pl-10 h-9"
-          />
-        </div>
-
-        {/* Search results */}
-        {searchResults.length > 0 && (
-          <div className="mt-2 border rounded-lg bg-white shadow-sm">
-            <ScrollArea className="max-h-32">
-              {searchResults.map((foundUser) => (
-                <div
-                  key={foundUser.id}
-                  className="flex items-center justify-between p-2 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
-                  onClick={() => createChatMutation.mutate(foundUser.id)}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
-                      {foundUser.firstName?.charAt(0) || foundUser.email.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">
-                        {foundUser.displayName || foundUser.firstName || foundUser.email}
-                      </p>
-                      <p className="text-xs text-gray-500">@{foundUser.username || foundUser.email}</p>
-                    </div>
-                  </div>
-                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
-            </ScrollArea>
-          </div>
-        )}
-      </div>
+      
 
       {/* Chat list */}
       <ScrollArea className="flex-1">
