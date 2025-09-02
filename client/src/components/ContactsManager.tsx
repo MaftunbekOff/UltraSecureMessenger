@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,10 @@ import {
   UserPlus, 
   Users,
   MessageCircle,
-  Plus
+  Plus,
+  Phone,
+  Video,
+  MoreVertical
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
@@ -39,201 +42,255 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
-  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [isAddContactOpen, setIsAddContactOpen] = useState(false);
+  const [newContactQuery, setNewContactQuery] = useState("");
 
   // Fetch contacts
-  const { data: contacts = [], isLoading } = useQuery({
-    queryKey: ["/api/users/contacts"],
+  const { data: contacts = [], isLoading } = useQuery<Contact[]>({
+    queryKey: ["/api/contacts"],
+    refetchInterval: 30000,
+  });
+
+  // Search users for adding new contacts
+  const { data: searchResults = [] } = useQuery({
+    queryKey: ["/api/users/search", newContactQuery],
     queryFn: async () => {
-      const response = await fetch("/api/users/contacts");
-      if (!response.ok) throw new Error("Failed to fetch contacts");
+      if (!newContactQuery.trim()) return [];
+      const response = await fetch(`/api/users/search?q=${encodeURIComponent(newContactQuery)}`, {
+        credentials: "include"
+      });
+      if (!response.ok) throw new Error("Failed to search users");
       return response.json();
     },
+    enabled: !!newContactQuery.trim(),
   });
 
-  // Search users for new contact
-  const { data: searchResults = [] } = useQuery({
-    queryKey: ["/api/users/search", userSearchQuery],
-    enabled: userSearchQuery.length > 0,
-  });
-
-  // Create direct chat mutation
-  const createDirectChatMutation = useMutation({
-    mutationFn: async (otherUserId: string) => {
-      const response = await fetch("/api/chats/direct", {
+  // Add contact mutation
+  const addContactMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await fetch("/api/contacts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otherUserId }),
+        credentials: "include",
+        body: JSON.stringify({ userId }),
       });
-      if (!response.ok) throw new Error("Failed to create direct chat");
+      if (!response.ok) throw new Error("Failed to add contact");
       return response.json();
     },
-    onSuccess: (chat) => {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+      setNewContactQuery("");
+      setIsAddContactOpen(false);
+      toast({
+        title: "Kontakt qo'shildi",
+        description: "Yangi kontakt muvaffaqiyatli qo'shildi.",
+      });
+    },
+  });
+
+  // Start chat with contact
+  const startChatMutation = useMutation({
+    mutationFn: async (contactId: string) => {
+      const response = await fetch("/api/chats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ participantId: contactId }),
+      });
+      if (!response.ok) throw new Error("Failed to create chat");
+      return response.json();
+    },
+    onSuccess: (newChat) => {
       queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
-      onChatCreated?.(chat.id);
-      toast({ title: "Chat yaratildi" });
+      onChatCreated?.(newChat.id);
     },
-    onError: () => {
-      toast({ title: "Xatolik", description: "Chat yaratib bo'lmadi", variant: "destructive" });
-    },
+  });
+
+  const filteredContacts = contacts.filter(contact => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      contact.displayName?.toLowerCase().includes(searchLower) ||
+      contact.username?.toLowerCase().includes(searchLower) ||
+      contact.email?.toLowerCase().includes(searchLower)
+    );
   });
 
   const handleStartChat = (contactId: string) => {
-    createDirectChatMutation.mutate(contactId);
+    startChatMutation.mutate(contactId);
   };
 
-  // Filter contacts based on search
-  const filteredContacts = contacts.filter((contact: Contact) => {
-    const matchesSearch = 
-      contact.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contact.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contact.email?.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return matchesSearch && !contact.isBlocked;
-  });
-
-  const getLastSeenText = (lastSeen?: string) => {
-    if (!lastSeen) return "";
+  const formatLastSeen = (lastSeen?: string) => {
+    if (!lastSeen) return "Hali ko'rinmagan";
     const date = new Date(lastSeen);
     const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffInHours = Math.abs(now.getTime() - date.getTime()) / 36e5;
 
-    if (diffMins < 5) return "Hozir";
-    if (diffMins < 60) return `${diffMins} daqiqa oldin`;
-    if (diffHours < 24) return `${diffHours} soat oldin`;
-    return `${diffDays} kun oldin`;
+    if (diffInHours < 1) return "Hozir";
+    if (diffInHours < 24) return `${Math.floor(diffInHours)} soat oldin`;
+    return date.toLocaleDateString('uz-UZ');
   };
 
   return (
-    <div className="contact-list-container">
-      {/* Search contacts */}
-      <div className="px-3 py-2 border-b">
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="p-3 border-b bg-white">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold">Kontaktlar</h2>
+          <Dialog open={isAddContactOpen} onOpenChange={setIsAddContactOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="h-8">
+                <UserPlus className="h-4 w-4 mr-1" />
+                Qo'shish
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Yangi kontakt qo'shish</DialogTitle>
+                <DialogDescription>
+                  Foydalanuvchini qidiring va kontaktlarga qo'shing
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Email yoki username..."
+                    value={newContactQuery}
+                    onChange={(e) => setNewContactQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                {searchResults.length > 0 && (
+                  <ScrollArea className="max-h-60">
+                    <div className="space-y-2">
+                      {searchResults.map((foundUser: any) => (
+                        <div
+                          key={foundUser.id}
+                          className="flex items-center justify-between p-2 border rounded-lg hover:bg-gray-50"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium">
+                              {foundUser.firstName?.charAt(0) || foundUser.email.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="font-medium">
+                                {foundUser.displayName || foundUser.firstName || foundUser.email}
+                              </p>
+                              <p className="text-sm text-gray-500">@{foundUser.username || foundUser.email}</p>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => addContactMutation.mutate(foundUser.id)}
+                            disabled={addContactMutation.isPending}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
             placeholder="Kontaktlarni qidirish..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-9"
+            className="pl-10"
           />
         </div>
       </div>
 
       {/* Contacts List */}
       <ScrollArea className="flex-1">
-        <div className="space-y-1 p-2">
+        <div className="p-2">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
             </div>
           ) : filteredContacts.length === 0 ? (
-            <div className="text-center py-8 px-4">
+            <div className="text-center py-8">
               <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-gray-500">Kontaktlar yo'q</p>
-              <p className="text-xs text-gray-400">Yangi kontakt qo'shish uchun qidiring</p>
+              <p className="text-gray-500 mb-2">Kontaktlar topilmadi</p>
+              <p className="text-sm text-gray-400">
+                {contacts.length === 0 ? "Hali kontaktlar yo'q" : "Qidiruv bo'yicha natija yo'q"}
+              </p>
             </div>
           ) : (
-            filteredContacts.map((contact, contactIndex) => (
-              <div
-                key={`contact-${contact.id}-${contactIndex}`}
-                onClick={() => handleStartChat(contact.id)}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
-              >
-                {/* Contact avatar */}
-                <div className="relative">
-                  <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                    {(contact.displayName || contact.username || contact.email || "U").charAt(0).toUpperCase()}
+            <div className="space-y-1">
+              {filteredContacts.map((contact) => (
+                <div
+                  key={contact.id}
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  {/* Avatar */}
+                  <div className="relative">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
+                      {contact.displayName?.charAt(0) || contact.email?.charAt(0) || "U"}
+                    </div>
+                    {contact.isOnline && (
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                    )}
                   </div>
-                  {contact.isOnline && (
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
-                  )}
+
+                  {/* Contact Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium truncate">
+                        {contact.displayName || contact.email}
+                      </h3>
+                      {contact.isFavorite && (
+                        <Badge variant="secondary" className="text-xs">⭐</Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500 truncate">
+                      @{contact.username || contact.email}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {contact.isOnline ? "Online" : formatLastSeen(contact.lastSeen)}
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleStartChat(contact.id)}
+                      disabled={startChatMutation.isPending}
+                      className="h-8 w-8 p-0"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                    >
+                      <Phone className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-
-                {/* Contact info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-sm truncate">
-                      {contact.nickname || contact.displayName || contact.username || contact.email}
-                    </h3>
-                    <span className="text-xs text-gray-500">
-                      {contact.isOnline ? "Online" : getLastSeenText(contact.lastSeen)}
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-gray-600 truncate">
-                    @{contact.username || contact.email}
-                  </p>
-
-                  <div className="flex items-center gap-1 mt-1">
-                    <MessageCircle className="h-3 w-3 text-gray-400" />
-                    <span className="text-xs text-gray-400">Shaxsiy chat</span>
-                  </div>
-                </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
       </ScrollArea>
-
-      {/* Add Contact Dialog */}
-      <div className="p-2 border-t">
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="w-full">
-              <Plus className="h-4 w-4 mr-2" />
-              Yangi kontakt
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Yangi kontakt qo'shish</DialogTitle>
-              <DialogDescription>
-                Yangi kontakt qo'shish uchun email manzilini kiriting
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Email manzil"
-                  value={userSearchQuery}
-                  onChange={(e) => setUserSearchQuery(e.target.value)}
-                  className="flex-1"
-                />
-                <Button 
-                  onClick={() => setUserSearchQuery(userSearchQuery)} 
-                  disabled={userSearchQuery.length === 0}
-                >
-                  Qidirish
-                </Button>
-              </div>
-
-              {searchResults.length > 0 && (
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {searchResults.map((user: any) => (
-                    <div
-                      key={user.id}
-                      className="flex items-center justify-between p-2 rounded-md hover:bg-gray-100"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-xs">
-                          {user.displayName.charAt(0).toUpperCase()}
-                        </div>
-                        <span className="text-sm font-medium">{user.displayName}</span>
-                      </div>
-                      <Button variant="secondary" size="sm" onClick={() => handleStartChat(user.id)}>
-                        Chat
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
     </div>
   );
 }
