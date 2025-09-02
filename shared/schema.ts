@@ -110,6 +110,66 @@ export const messageReads = pgTable("message_reads", {
   readAt: timestamp("read_at").defaultNow(),
 });
 
+// User badges and verification
+export const userBadges = pgTable("user_badges", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  badgeType: varchar("badge_type").notNull(), // verified, developer, premium, early_adopter
+  issuedBy: varchar("issued_by"),
+  issuedAt: timestamp("issued_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+});
+
+// User status updates (stories)
+export const userStatuses = pgTable("user_statuses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  content: text("content"),
+  mediaUrl: varchar("media_url"),
+  mediaType: varchar("media_type"), // image, video, text
+  backgroundColor: varchar("background_color"),
+  textColor: varchar("text_color"),
+  expiresAt: timestamp("expires_at").notNull(),
+  viewCount: integer("view_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Status views tracking
+export const statusViews = pgTable("status_views", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  statusId: varchar("status_id").references(() => userStatuses.id, { onDelete: 'cascade' }).notNull(),
+  viewerId: varchar("viewer_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  viewedAt: timestamp("viewed_at").defaultNow(),
+});
+
+// User contacts/friends
+export const userContacts = pgTable("user_contacts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  contactId: varchar("contact_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  nickname: varchar("nickname"),
+  isFavorite: boolean("is_favorite").default(false),
+  isBlocked: boolean("is_blocked").default(false),
+  addedAt: timestamp("added_at").defaultNow(),
+});
+
+// User activity tracking
+export const userActivity = pgTable("user_activity", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  activityType: varchar("activity_type").notNull(), // message_sent, profile_updated, status_posted
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Profile views tracking
+export const profileViews = pgTable("profile_views", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  profileUserId: varchar("profile_user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  viewerId: varchar("viewer_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  viewedAt: timestamp("viewed_at").defaultNow(),
+});
+
 // Define relations
 export const usersRelations = relations(users, ({ many }) => ({
   sentMessages: many(messages),
@@ -322,62 +382,3 @@ export type InsertChatMember = z.infer<typeof insertChatMemberSchema>;
 export type MessageReaction = typeof messageReactions.$inferSelect;
 export type InsertMessageReaction = z.infer<typeof insertMessageReactionSchema>;
 export type MessageRead = typeof messageReads.$inferSelect;
-// User badges and verification
-export const userBadges = pgTable("user_badges", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  badgeType: varchar("badge_type").notNull(), // verified, developer, premium, early_adopter
-  issuedBy: varchar("issued_by"),
-  issuedAt: timestamp("issued_at").defaultNow(),
-  expiresAt: timestamp("expires_at"),
-});
-
-// User status updates (stories)
-export const userStatuses = pgTable("user_statuses", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  content: text("content"),
-  mediaUrl: varchar("media_url"),
-  mediaType: varchar("media_type"), // image, video, text
-  backgroundColor: varchar("background_color"),
-  textColor: varchar("text_color"),
-  expiresAt: timestamp("expires_at").notNull(),
-  viewCount: integer("view_count").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Status views tracking
-export const statusViews = pgTable("status_views", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  statusId: varchar("status_id").references(() => userStatuses.id, { onDelete: 'cascade' }).notNull(),
-  viewerId: varchar("viewer_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  viewedAt: timestamp("viewed_at").defaultNow(),
-});
-
-// User contacts/friends
-export const userContacts = pgTable("user_contacts", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  contactId: varchar("contact_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  nickname: varchar("nickname"),
-  isFavorite: boolean("is_favorite").default(false),
-  isBlocked: boolean("is_blocked").default(false),
-  addedAt: timestamp("added_at").defaultNow(),
-});
-
-// User activity tracking
-export const userActivity = pgTable("user_activity", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  activityType: varchar("activity_type").notNull(), // message_sent, profile_updated, status_posted
-  metadata: jsonb("metadata"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Profile views tracking
-export const profileViews = pgTable("profile_views", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  profileUserId: varchar("profile_user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  viewerId: varchar("viewer_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  viewedAt: timestamp("viewed_at").defaultNow(),
-});
