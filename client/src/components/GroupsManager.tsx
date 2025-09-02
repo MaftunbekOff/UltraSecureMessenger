@@ -8,17 +8,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { 
   Users, 
-  Hash, 
   Plus, 
   Search, 
   Settings, 
-  UserPlus,
   Crown,
   MessageCircle,
   Lock,
@@ -44,18 +41,16 @@ export default function GroupsManager() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
 
-  // Form state for creating groups/channels
+  // Form state for creating groups
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     isPrivate: false,
-    isChannel: false,
   });
 
-  // Fetch groups and channels
-  const { data: groups = [], isLoading } = useQuery({
+  // Fetch groups only
+  const { data: allGroups = [], isLoading } = useQuery({
     queryKey: ["/api/groups"],
     queryFn: async () => {
       const response = await fetch("/api/groups");
@@ -64,7 +59,10 @@ export default function GroupsManager() {
     },
   });
 
-  // Create group/channel mutation
+  // Filter to show only groups (not channels)
+  const groups = allGroups.filter((group: Group) => group.isGroup && !group.isChannel);
+
+  // Create group mutation
   const createGroupMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       const response = await fetch("/api/chats", {
@@ -74,7 +72,7 @@ export default function GroupsManager() {
           name: data.name,
           description: data.description,
           isGroup: true,
-          isChannel: data.isChannel,
+          isChannel: false,
           isPrivate: data.isPrivate,
         }),
       });
@@ -84,19 +82,14 @@ export default function GroupsManager() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
       setIsCreateOpen(false);
-      setFormData({ name: "", description: "", isPrivate: false, isChannel: false });
-      toast({ title: formData.isChannel ? "Kanal yaratildi" : "Guruh yaratildi" });
+      setFormData({ name: "", description: "", isPrivate: false });
+      toast({ title: "Guruh yaratildi" });
     },
   });
 
-  const filteredGroups = groups.filter((group: Group) => {
-    const matchesSearch = group.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTab = 
-      (activeTab === "channels" && group.isChannel) ||
-      (activeTab === "all");
-
-    return matchesSearch && matchesTab;
-  });
+  const filteredGroups = groups.filter((group: Group) => 
+    group.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const GroupItem = ({ group }: { group: Group }) => (
     <Card className="hover:bg-accent cursor-pointer transition-colors">
@@ -106,11 +99,7 @@ export default function GroupsManager() {
             <Avatar className="h-12 w-12">
               <AvatarImage src={group.avatarUrl} alt={group.name} />
               <AvatarFallback>
-                {group.isChannel ? (
-                  <Hash className="h-6 w-6" />
-                ) : (
-                  <Users className="h-6 w-6" />
-                )}
+                <Users className="h-6 w-6" />
               </AvatarFallback>
             </Avatar>
             {group.isPrivate && (
@@ -167,42 +156,26 @@ export default function GroupsManager() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b">
-        <div className="flex items-center justify-end mb-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">Guruhlar</h2>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
-                Yaratish
+                Guruh yaratish
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>
-                  {formData.isChannel ? "Yangi kanal yaratish" : "Yangi guruh yaratish"}
-                </DialogTitle>
+                <DialogTitle>Yangi guruh yaratish</DialogTitle>
               </DialogHeader>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="is-channel"
-                      checked={formData.isChannel}
-                      onCheckedChange={(checked) => 
-                        setFormData(prev => ({ ...prev, isChannel: checked }))
-                      }
-                    />
-                    <Label htmlFor="is-channel">Kanal</Label>
-                  </div>
-                </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="name">
-                    {formData.isChannel ? "Kanal nomi" : "Guruh nomi"}
-                  </Label>
+                  <Label htmlFor="name">Guruh nomi</Label>
                   <Input
                     id="name"
-                    placeholder={formData.isChannel ? "Kanal nomini kiriting" : "Guruh nomini kiriting"}
+                    placeholder="Guruh nomini kiriting"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   />
@@ -229,7 +202,7 @@ export default function GroupsManager() {
                   />
                   <Label htmlFor="is-private" className="flex items-center gap-2">
                     {formData.isPrivate ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-                    {formData.isPrivate ? "Maxfiy" : "Ochiq"}
+                    {formData.isPrivate ? "Maxfiy guruh" : "Ochiq guruh"}
                   </Label>
                 </div>
 
@@ -255,26 +228,18 @@ export default function GroupsManager() {
         </div>
 
         {/* Search */}
-        <div className="relative mb-4">
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Qidirish..."
+            placeholder="Guruhlarni qidiring..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
         </div>
-
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="all">Barchasi</TabsTrigger>
-            <TabsTrigger value="channels">Kanallar</TabsTrigger>
-          </TabsList>
-        </Tabs>
       </div>
 
-      {/* Groups/Channels List */}
+      {/* Groups List */}
       <div className="flex-1 overflow-y-auto p-4">
         {isLoading ? (
           <div className="flex justify-center py-8">
@@ -283,11 +248,7 @@ export default function GroupsManager() {
         ) : filteredGroups.length === 0 ? (
           <div className="text-center py-8">
             <div className="mb-4">
-              {formData.isChannel ? (
-                <Hash className="h-12 w-12 text-muted-foreground mx-auto" />
-              ) : (
-                <Users className="h-12 w-12 text-muted-foreground mx-auto" />
-              )}
+              <Users className="h-12 w-12 text-muted-foreground mx-auto" />
             </div>
             <h3 className="font-medium mb-2">
               {searchQuery ? "Natija topilmadi" : "Guruhlar yo'q"}
@@ -295,7 +256,7 @@ export default function GroupsManager() {
             <p className="text-muted-foreground text-sm">
               {searchQuery 
                 ? "Boshqa nom bilan qidirib ko'ring" 
-                : "Yangi guruh yoki kanal yaratish uchun yuqoridagi 'Yaratish' tugmasini bosing"
+                : "Yangi guruh yaratish uchun yuqoridagi 'Guruh yaratish' tugmasini bosing"
               }
             </p>
           </div>
@@ -310,13 +271,8 @@ export default function GroupsManager() {
 
       {/* Stats Footer */}
       <div className="p-4 border-t bg-muted/30">
-        <div className="flex justify-between text-sm text-muted-foreground">
-          <span>
-            Guruhlar: {groups.filter((g: Group) => g.isGroup && !g.isChannel).length}
-          </span>
-          <span>
-            Kanallar: {groups.filter((g: Group) => g.isChannel).length}
-          </span>
+        <div className="text-center text-sm text-muted-foreground">
+          Jami guruhlar: {filteredGroups.length}
         </div>
       </div>
     </div>
