@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { useAuth } from "@/hooks/useAuth";
 import Landing from "@/pages/Landing";
 import Chat from "@/pages/Chat";
+import LoginPage from "@/components/LoginPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -21,6 +22,7 @@ function Router() {
           <Route path="/" component={Chat} />
         </>
       )}
+      <Route path="/login" component={LoginPage} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Shield, MessageCircle, Lock, Users, Zap, Globe } from "lucide-react";
+import { Shield, MessageCircle, Lock, Users, Zap, Globe, Mail } from "lucide-react";
 
 export default function Landing() {
   const handleLogin = () => {
-    window.location.href = "/api/auth/google";
+    window.location.href = "/login";
   };
 
   return (
@@ -30,17 +30,17 @@ export default function Landing() {
           <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center mx-auto mb-8">
             <MessageCircle className="h-12 w-12 text-primary-foreground" />
           </div>
-          
+
           <h2 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
             Secure Messaging
             <span className="text-primary"> Redefined</span>
           </h2>
-          
+
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
             Experience the next generation of secure communication with end-to-end encryption, 
             lightning-fast performance, and a beautiful interface designed for the modern world.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button onClick={handleLogin} size="lg" className="text-lg px-8" data-testid="button-get-started">
               Get Started
