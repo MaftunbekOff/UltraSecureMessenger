@@ -170,7 +170,7 @@ export default function GroupsManager() {
       {/* Header */}
       <div className="p-4 border-b">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Guruhlar va Kanallar</h2>
+          <h2 className="text-xl font-semibold">Guruhlar</h2>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
@@ -261,7 +261,7 @@ export default function GroupsManager() {
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Guruhlar va kanallarni qidirish..."
+            placeholder="Qidirish..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -294,7 +294,7 @@ export default function GroupsManager() {
               )}
             </div>
             <h3 className="font-medium mb-2">
-              {searchQuery ? "Natija topilmadi" : "Guruhlar va kanallar yo'q"}
+              {searchQuery ? "Natija topilmadi" : "Guruhlar yo'q"}
             </h3>
             <p className="text-muted-foreground text-sm mb-4">
               {searchQuery 
