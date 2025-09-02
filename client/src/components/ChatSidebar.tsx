@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ContactsManager from "@/components/ContactsManager";
 import GroupsManager from "@/components/GroupsManager";
 import {
-  Search,
   MessageCircle,
   Users,
   Plus,
@@ -51,7 +50,6 @@ interface ChatSidebarProps {
 export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [searchQuery, setSearchQuery] = useState("");
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [isContactsOpen, setIsContactsOpen] = useState(false);
 
@@ -90,14 +88,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
     },
   });
 
-  const filteredChats = chats?.filter(chat => {
-    const searchLower = searchQuery.toLowerCase();
-    return (chat.name || '').toLowerCase().includes(searchLower) ||
-           chat.participants.some(p =>
-             (p.displayName || '').toLowerCase().includes(searchLower) ||
-             (p.email || '').toLowerCase().includes(searchLower)
-           );
-  }) || [];
+  const filteredChats = chats || [];
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -137,22 +128,9 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
 
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* Search */}
-      <div className="p-3 border-b">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Chatlarni qidirish..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-      </div>
-
       {/* Tabs */}
       <Tabs defaultValue="chats" className="flex-1 flex flex-col">
-        <TabsList className="grid w-full grid-cols-3 mx-3 mt-2">
+        <TabsList className="grid w-full grid-cols-3 mx-3 mt-3">
           <TabsTrigger value="chats" className="text-xs">
             <MessageCircle className="h-3 w-3 mr-1" />
             Chatlar
