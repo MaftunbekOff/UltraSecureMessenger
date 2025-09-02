@@ -90,10 +90,18 @@ export default function UserProfile({ userId, onClose, onStartChat }: UserProfil
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
-      window.location.href = '/'; // Redirect to the homepage after logout
+      queryClient.clear();
+      window.location.href = '/login';
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out",
+      });
     } catch (error) {
-      console.error('Logout failed:', error);
-      toast({ title: "Logout failed", description: "Please try again." });
+      toast({
+        title: "Logout failed",
+        description: "Please try again",
+        variant: "destructive",
+      });
     }
   };
 

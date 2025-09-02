@@ -1,11 +1,62 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Chrome, Shield } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Shield, Mail } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
-  const handleGoogleLogin = () => {
-    window.location.href = "/api/auth/google";
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !email.includes('@')) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch('/api/auth/email/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Login Successful",
+          description: "Welcome to UltraSecure Messenger!",
+        });
+        window.location.href = "/";
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Login Failed",
+          description: error.message || "Please try again",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Login Error",
+        description: "Network error. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -16,20 +67,37 @@ export default function LoginPage() {
             <Shield className="h-8 w-8 text-primary-foreground" />
           </div>
           <CardTitle className="text-2xl">Welcome to UltraSecure Messenger</CardTitle>
-          <p className="text-muted-foreground">Sign in to start secure messaging</p>
+          <p className="text-muted-foreground">Enter your email to continue</p>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Button 
-            onClick={handleGoogleLogin} 
-            className="w-full" 
-            size="lg"
-            data-testid="button-google-login"
-          >
-            <Chrome className="h-5 w-5 mr-2" />
-            Continue with Google
-          </Button>
+        <CardContent>
+          <form onSubmit={handleEmailLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+                data-testid="input-email"
+              />
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="w-full" 
+              size="lg"
+              disabled={isLoading}
+              data-testid="button-email-login"
+            >
+              <Mail className="h-5 w-5 mr-2" />
+              {isLoading ? "Signing in..." : "Continue with Email"}
+            </Button>
+          </form>
           
-          <div className="text-center text-sm text-muted-foreground">
+          <div className="text-center text-sm text-muted-foreground mt-4">
             <p>By signing in, you agree to our Terms of Service and Privacy Policy</p>
           </div>
         </CardContent>
