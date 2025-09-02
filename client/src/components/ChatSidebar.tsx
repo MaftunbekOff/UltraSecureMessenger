@@ -9,13 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ContactsManager from "@/components/ContactsManager";
 import GroupsManager from "@/components/GroupsManager";
 import {
+  Search,
   MessageCircle,
   Users,
   Plus,
   Hash,
   Clock
 } from "lucide-react";
-import { Search } from "lucide-react";
 
 interface User {
   id: string;
@@ -167,7 +167,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="chats" className="flex-1 flex flex-col">
+        <TabsContent value="chats" className="flex-1 flex flex-col p-0">
           {/* New chat section */}
           <div className="px-3 mb-2">
             <div className="relative">
@@ -295,11 +295,11 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="contacts" className="flex-1">
+        <TabsContent value="contacts" className="flex-1 p-0">
           <ContactsManager onChatCreated={onChatSelect} />
         </TabsContent>
 
-        <TabsContent value="groups" className="flex-1">
+        <TabsContent value="groups" className="flex-1 p-0">
           <GroupsManager onChatCreated={onChatSelect} />
         </TabsContent>
       </Tabs>
