@@ -242,20 +242,21 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                   onChange={(e) => {
                     let value = e.target.value;
                     
-                    // Remove @ if user types it
+                    // If user typed @, remove it to get clean value
                     if (value.startsWith('@')) {
                       value = value.substring(1);
                     }
                     
-                    // Remove 'group' suffix if user types it
+                    // If value already ends with 'group', remove it to avoid duplication
                     if (value.endsWith('group')) {
                       value = value.substring(0, value.length - 5);
                     }
                     
-                    // Add @ prefix and group suffix automatically
-                    const finalValue = value ? `@${value}group` : '';
-                    
-                    setGroupForm(prev => ({ ...prev, username: finalValue }));
+                    // Store clean value without prefix/suffix for editing
+                    setGroupForm(prev => ({ 
+                      ...prev, 
+                      username: value ? `@${value}group` : '' 
+                    }));
                   }}
                 />
                 <p className="text-xs text-muted-foreground">
@@ -347,20 +348,21 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                   onChange={(e) => {
                     let value = e.target.value;
                     
-                    // Remove @ if user types it
+                    // If user typed @, remove it to get clean value
                     if (value.startsWith('@')) {
                       value = value.substring(1);
                     }
                     
-                    // Remove 'channel' suffix if user types it
+                    // If value already ends with 'channel', remove it to avoid duplication
                     if (value.endsWith('channel')) {
                       value = value.substring(0, value.length - 7);
                     }
                     
-                    // Add @ prefix and channel suffix automatically
-                    const finalValue = value ? `@${value}channel` : '';
-                    
-                    setChannelForm(prev => ({ ...prev, username: finalValue }));
+                    // Store clean value without prefix/suffix for editing
+                    setChannelForm(prev => ({ 
+                      ...prev, 
+                      username: value ? `@${value}channel` : '' 
+                    }));
                   }}
                 />
                 <p className="text-xs text-muted-foreground">
