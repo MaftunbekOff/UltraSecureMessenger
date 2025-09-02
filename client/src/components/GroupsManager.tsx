@@ -45,7 +45,7 @@ export default function GroupsManager() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("groups");
+  const [activeTab, setActiveTab] = useState("all");
 
   // Form state for creating groups/channels
   const [formData, setFormData] = useState({
@@ -93,7 +93,6 @@ export default function GroupsManager() {
   const filteredGroups = groups.filter((group: Group) => {
     const matchesSearch = group.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesTab = 
-      (activeTab === "groups" && group.isGroup && !group.isChannel) ||
       (activeTab === "channels" && group.isChannel) ||
       (activeTab === "all");
     
@@ -270,9 +269,8 @@ export default function GroupsManager() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="all">Barchasi</TabsTrigger>
-            <TabsTrigger value="groups">Guruhlar</TabsTrigger>
             <TabsTrigger value="channels">Kanallar</TabsTrigger>
           </TabsList>
         </Tabs>
