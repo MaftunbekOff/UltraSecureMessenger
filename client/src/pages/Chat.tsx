@@ -3,8 +3,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { ChatSidebar } from "@/components/ChatSidebar";
 import { ChatArea } from "@/components/ChatArea";
+import PerformanceDashboard from "@/components/PerformanceDashboard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { useRouter } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Activity } from "lucide-react";
 
 export default function Chat() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -12,6 +16,7 @@ export default function Chat() {
   const isMobile = useIsMobile();
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [showPerformanceDashboard, setShowPerformanceDashboard] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -64,6 +69,25 @@ export default function Chat() {
     return null; // Will redirect in useEffect
   }
 
+  if (showPerformanceDashboard) {
+    return (
+      <div className="h-screen flex flex-col bg-background">
+        <div className="flex justify-between items-center p-4 border-b">
+          <h2 className="text-xl font-semibold">Performance Dashboard</h2>
+          <Button
+            variant="outline"
+            onClick={() => setShowPerformanceDashboard(false)}
+          >
+            Back to Chat
+          </Button>
+        </div>
+        <div className="flex-1 overflow-auto">
+          <PerformanceDashboard />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex overflow-hidden bg-background">
       {/* Mobile: Show sidebar or chat area */}
@@ -91,6 +115,19 @@ export default function Chat() {
           <ChatArea chatId={selectedChatId} />
         </>
       )}
+
+      {/* Performance monitoring toggle */}
+      <div className="fixed bottom-4 right-4">
+        <Button
+          onClick={() => setShowPerformanceDashboard(true)}
+          variant="outline"
+          size="sm"
+          className="bg-background/80 backdrop-blur-sm"
+        >
+          <Activity className="h-4 w-4 mr-2" />
+          Performance
+        </Button>
+      </div>
     </div>
   );
 }

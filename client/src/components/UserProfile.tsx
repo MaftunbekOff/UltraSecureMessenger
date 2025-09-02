@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -23,6 +22,7 @@ import {
   UserPlus,
   UserMinus,
   Block,
+  LogOut, // Added LogOut icon
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
@@ -86,6 +86,17 @@ export default function UserProfile({ userId, onClose, onStartChat }: UserProfil
     },
   });
 
+  // Added logout handler
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/'; // Redirect to the homepage after logout
+    } catch (error) {
+      console.error('Logout failed:', error);
+      toast({ title: "Logout failed", description: "Please try again." });
+    }
+  };
+
   if (isLoading || !profileData) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -103,7 +114,7 @@ export default function UserProfile({ userId, onClose, onStartChat }: UserProfil
     if (profileData.lastSeenVisibility === "nobody" && !isOwnProfile) {
       return null;
     }
-    
+
     if (profileData.isOnline) {
       return "Online";
     }
@@ -115,14 +126,14 @@ export default function UserProfile({ userId, onClose, onStartChat }: UserProfil
       const diffMins = Math.floor(diffMs / (1000 * 60));
       const diffHours = Math.floor(diffMins / 60);
       const diffDays = Math.floor(diffHours / 24);
-      
+
       if (diffMins < 1) return "Last seen just now";
       if (diffMins < 60) return `Last seen ${diffMins} min ago`;
       if (diffHours < 24) return `Last seen ${diffHours}h ago`;
       if (diffDays < 7) return `Last seen ${diffDays}d ago`;
       return "Last seen recently";
     }
-    
+
     return "Last seen recently";
   };
 
@@ -315,7 +326,7 @@ export default function UserProfile({ userId, onClose, onStartChat }: UserProfil
                     <Activity className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">Profile completion: {profileData.profileCompletionScore || 0}%</span>
                   </div>
-                  
+
                   {profileData.badges && profileData.badges.length > 0 && (
                     <div className="space-y-2">
                       <h4 className="text-sm font-medium">Badges</h4>
@@ -333,6 +344,16 @@ export default function UserProfile({ userId, onClose, onStartChat }: UserProfil
             </Card>
           </TabsContent>
         </Tabs>
+      )}
+
+      {/* Add Logout Button for the current user's profile */}
+      {isOwnProfile && (
+        <div className="flex justify-center mt-4">
+          <Button variant="destructive" onClick={handleLogout} className="w-full max-w-xs">
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
+          </Button>
+        </div>
       )}
     </div>
   );

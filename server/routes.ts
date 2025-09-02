@@ -1,7 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupGoogleAuth, isAuthenticated } from "./googleAuth";
+import { performanceMonitor, trackAPIPerformance } from "./performanceMonitor";
 import { insertChatSchema, insertMessageSchema, insertChatMemberSchema, insertMessageReactionSchema } from "@shared/schema";
 import multer from "multer";
 import path from "path";
@@ -17,7 +18,10 @@ const upload = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
-  await setupAuth(app);
+  await setupGoogleAuth(app);
+  
+  // Performance tracking middleware
+  app.use(trackAPIPerformance);
 
   // Ensure uploads directory exists
   const uploadsDir = path.join(process.cwd(), 'uploads');
@@ -512,6 +516,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error marking chat as read:", error);
       res.status(500).json({ message: "Failed to mark chat as read" });
+    }
+  });
+
+  // Performance monitoring routes
+  app.get('/api/performance/metrics', async (req, res) => {
+    try {
+      const metrics = performanceMonitor.getSystemMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error fetching performance metrics:", error);
+      res.status(500).json({ message: "Failed to fetch metrics" });
+    }
+  });
+
+  app.post('/api/performance/track', async (req, res) => {
+    try {
+      const { type, value, metadata } = req.body;
+      performanceMonitor.recordMetric(type, value, metadata);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error recording metric:", error);
+      res.status(500).json({ message: "Failed to record metric" });
+    }
+  });
+
+  app.post('/api/performance/simulate/:condition', async (req, res) => {
+    try {
+      const { condition } = req.params;
+      if (!['slow', 'fast', 'unstable'].includes(condition)) {
+        return res.status(400).json({ message: "Invalid network condition" });
+      }
+      res.json({ message: `Simulating ${condition} network conditions` });
+    } catch (error) {
+      console.error("Error simulating network:", error);
+      res.status(500).json({ message: "Failed to simulate network" });
+    }
+  });
+
+  app.post('/api/performance/load-test', async (req, res) => {
+    try {
+      const { messagesPerSecond, durationSeconds } = req.body;
+      
+      // Run load test in background
+      performanceMonitor.simulateLoad(messagesPerSecond, durationSeconds);
+      
+      res.json({ 
+        message: `Started load test: ${messagesPerSecond} MPS for ${durationSeconds}s` 
+      });
+    } catch (error) {
+      console.error("Error starting load test:", error);
+      res.status(500).json({ message: "Failed to start load test" });
     }
   });
 

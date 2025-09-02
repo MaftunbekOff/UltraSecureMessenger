@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Paperclip, Smile, Send, X } from "lucide-react";
+import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 import type { Message } from "@shared/schema";
 
 interface MessageInputProps {
@@ -19,6 +20,7 @@ export function MessageInput({ chatId, replyTo, onClearReply }: MessageInputProp
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { trackMessageLatency } = usePerformanceMonitor();
 
   // Send message mutation
   const sendMessageMutation = useMutation({
@@ -46,17 +48,17 @@ export function MessageInput({ chatId, replyTo, onClearReply }: MessageInputProp
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append("file", file);
-      
+
       const response = await fetch("/api/upload", {
         method: "POST",
         body: formData,
         credentials: "include",
       });
-      
+
       if (!response.ok) {
         throw new Error("Upload failed");
       }
-      
+
       return response.json();
     },
     onSuccess: (data) => {
@@ -96,14 +98,38 @@ export function MessageInput({ chatId, replyTo, onClearReply }: MessageInputProp
     }
   };
 
-  const handleSend = () => {
-    const trimmedMessage = message.trim();
-    if (!trimmedMessage || sendMessageMutation.isPending) return;
+  const handleSend = async () => {
+    if (!message.trim() || !chatId) return;
 
-    sendMessageMutation.mutate({
-      content: trimmedMessage,
-      replyToId: replyTo?.id,
-    });
+    const startTime = performance.now();
+
+    try {
+      const response = await fetch(`/api/chats/${chatId}/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: message,
+          messageType: "text",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send message");
+      }
+
+      const newMessage = await response.json();
+
+      // Track message latency
+      const latency = trackMessageLatency(startTime);
+      console.log(`[Performance] Message sent in ${latency.toFixed(2)}ms`);
+
+      onSendMessage?.(newMessage);
+      setMessage("");
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,7 +188,7 @@ export function MessageInput({ chatId, replyTo, onClearReply }: MessageInputProp
         >
           <Paperclip className="h-4 w-4" />
         </Button>
-        
+
         <input
           ref={fileInputRef}
           type="file"
@@ -170,7 +196,7 @@ export function MessageInput({ chatId, replyTo, onClearReply }: MessageInputProp
           onChange={handleFileSelect}
           accept="*/*"
         />
-        
+
         {/* Message Input */}
         <div className="flex-1 relative">
           <Textarea
@@ -187,7 +213,7 @@ export function MessageInput({ chatId, replyTo, onClearReply }: MessageInputProp
             disabled={sendMessageMutation.isPending || isUploading}
             data-testid="textarea-message-input"
           />
-          
+
           {/* Emoji Button */}
           <Button
             variant="ghost"
@@ -198,7 +224,7 @@ export function MessageInput({ chatId, replyTo, onClearReply }: MessageInputProp
             <Smile className="h-4 w-4" />
           </Button>
         </div>
-        
+
         {/* Send Button */}
         <Button
           onClick={handleSend}
