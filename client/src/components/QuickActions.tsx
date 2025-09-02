@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -35,7 +34,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
-  
+
   // Form states
   const [groupForm, setGroupForm] = useState({
     name: "",
@@ -208,7 +207,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
             </CardContent>
           </Card>
         )}
-        
+
         <Button
           size="lg"
           className="rounded-full w-14 h-14 shadow-lg"
@@ -224,7 +223,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
           <DialogHeader>
             <DialogTitle>Yangi guruh yaratish</DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="group-name">Guruh nomi</Label>
@@ -247,19 +246,24 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                   value={groupUsernameInput}
                   onChange={(e) => {
                     let value = e.target.value;
-                    
-                    // Remove @ and group if user types them
+
+                    // If user typed @, remove it to get clean value
                     if (value.startsWith('@')) {
                       value = value.substring(1);
                     }
+
+                    // If value already ends with 'group', remove it to avoid duplication
                     if (value.endsWith('group')) {
                       value = value.substring(0, value.length - 5);
                     }
-                    
+
+                    // Remove invalid characters (only allow letters, numbers, underscore)
+                    value = value.replace(/[^a-zA-Z0-9_]/g, '');
+
                     // Update input state with clean value
                     setGroupUsernameInput(value);
-                    
-                    // Update form with formatted username
+
+                    // Store clean value with prefix/suffix
                     setGroupForm(prev => ({ 
                       ...prev, 
                       username: value ? `@${value}group` : '' 
@@ -337,7 +341,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
           <DialogHeader>
             <DialogTitle>Yangi kanal yaratish</DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="channel-name">Kanal nomi</Label>
@@ -360,19 +364,24 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                   value={channelUsernameInput}
                   onChange={(e) => {
                     let value = e.target.value;
-                    
-                    // Remove @ and channel if user types them
+
+                    // If user typed @, remove it to get clean value
                     if (value.startsWith('@')) {
                       value = value.substring(1);
                     }
+
+                    // If value already ends with 'channel', remove it to avoid duplication
                     if (value.endsWith('channel')) {
                       value = value.substring(0, value.length - 7);
                     }
-                    
+
+                    // Remove invalid characters (only allow letters, numbers, underscore)
+                    value = value.replace(/[^a-zA-Z0-9_]/g, '');
+
                     // Update input state with clean value
                     setChannelUsernameInput(value);
-                    
-                    // Update form with formatted username
+
+                    // Store clean value with prefix/suffix
                     setChannelForm(prev => ({ 
                       ...prev, 
                       username: value ? `@${value}channel` : '' 
@@ -450,7 +459,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
           <DialogHeader>
             <DialogTitle>Yangi kontakt qo'shish</DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -461,13 +470,13 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 className="pl-10"
               />
             </div>
-            
+
             {isSearching && (
               <div className="text-center py-4">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
               </div>
             )}
-            
+
             <div className="max-h-64 overflow-y-auto space-y-2">
               {searchResults.map((user: any) => (
                 <div key={user.id} className="flex items-center gap-3 p-3 rounded-lg border">
@@ -490,7 +499,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                   </Button>
                 </div>
               ))}
-              
+
               {newContactQuery && !isSearching && searchResults.length === 0 && (
                 <div className="text-center py-4 text-muted-foreground">
                   Natija topilmadi
