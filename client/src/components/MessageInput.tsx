@@ -98,38 +98,14 @@ export function MessageInput({ chatId, replyTo, onClearReply }: MessageInputProp
     }
   };
 
-  const handleSend = async () => {
-    if (!message.trim() || !chatId) return;
+  const handleSend = () => {
+    if (!message.trim() || sendMessageMutation.isPending) return;
 
-    const startTime = performance.now();
-
-    try {
-      const response = await fetch(`/api/chats/${chatId}/messages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: message,
-          messageType: "text",
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to send message");
-      }
-
-      const newMessage = await response.json();
-
-      // Track message latency
-      const latency = trackMessageLatency(startTime);
-      console.log(`[Performance] Message sent in ${latency.toFixed(2)}ms`);
-
-      onSendMessage?.(newMessage);
-      setMessage("");
-    } catch (error) {
-      console.error("Error sending message:", error);
-    }
+    sendMessageMutation.mutate({
+      content: message,
+      messageType: "text",
+      replyToId: replyTo?.id,
+    });
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -90,9 +89,14 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
     },
   });
 
-  const filteredChats = chats.filter(chat =>
-    chat.name && chat.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredChats = chats?.filter(chat => {
+    const searchLower = searchQuery.toLowerCase();
+    return (chat.name || '').toLowerCase().includes(searchLower) ||
+           chat.participants.some(p => 
+             (p.displayName || '').toLowerCase().includes(searchLower) ||
+             (p.email || '').toLowerCase().includes(searchLower)
+           );
+  }) || [];
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -166,7 +170,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
                 className="pl-10 h-9"
               />
             </div>
-            
+
             {/* Search results */}
             {searchResults.length > 0 && (
               <div className="mt-2 border rounded-lg bg-white shadow-sm">
@@ -251,7 +255,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
                           )}
                         </div>
                       </div>
-                      
+
                       {chat.lastMessage && (
                         <p className="text-xs text-gray-600 truncate mt-1">
                           {chat.lastMessage.sender.id !== user?.id && (
@@ -262,7 +266,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
                           {" " + chat.lastMessage.content}
                         </p>
                       )}
-                      
+
                       <div className="flex items-center gap-1 mt-1">
                         {getChatIcon(chat)}
                         <span className="text-xs text-gray-400 capitalize">

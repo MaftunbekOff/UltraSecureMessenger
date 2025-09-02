@@ -164,6 +164,7 @@ export default function Chat() {
               has2FA: false,
               profileComplete: false
             }}
+            onClose={() => setCurrentView('chat')}
           />
         );
       default:

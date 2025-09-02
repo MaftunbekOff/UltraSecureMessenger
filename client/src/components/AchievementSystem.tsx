@@ -78,7 +78,7 @@ const LEVELS = [
   { level: 5, minPoints: 1000, title: 'Messenger ustasi', color: 'bg-yellow-500' },
 ];
 
-export function AchievementSystem({ userStats = {} }: { userStats?: any }) {
+export function AchievementSystem({ userStats = {}, onClose }: { userStats?: any; onClose?: () => void }) {
   const [achievements, setAchievements] = useState(ACHIEVEMENTS);
   const [totalPoints, setTotalPoints] = useState(0);
   const [currentLevel, setCurrentLevel] = useState(LEVELS[0]);
