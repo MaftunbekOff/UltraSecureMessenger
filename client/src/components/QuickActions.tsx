@@ -245,12 +245,11 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                       value = '@' + value;
                     }
                     // Ensure it starts with @group
-                    if (value && !value.startsWith('@group')) {
-                      if (value.startsWith('@')) {
-                        value = '@group' + value.substring(1);
-                      } else {
-                        value = '@group' + value;
-                      }
+                    if (value && value.startsWith('@') && !value.startsWith('@group')) {
+                      const suffix = value.substring(1);
+                      value = '@group' + suffix;
+                    } else if (value && !value.startsWith('@')) {
+                      value = '@group' + value;
                     }
                     setGroupForm(prev => ({ ...prev, username: value }));
                   }}
@@ -347,12 +346,11 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                       value = '@' + value;
                     }
                     // Ensure it starts with @channel
-                    if (value && !value.startsWith('@channel')) {
-                      if (value.startsWith('@')) {
-                        value = '@channel' + value.substring(1);
-                      } else {
-                        value = '@channel' + value;
-                      }
+                    if (value && value.startsWith('@') && !value.startsWith('@channel')) {
+                      const suffix = value.substring(1);
+                      value = '@channel' + suffix;
+                    } else if (value && !value.startsWith('@')) {
+                      value = '@channel' + value;
                     }
                     setChannelForm(prev => ({ ...prev, username: value }));
                   }}
