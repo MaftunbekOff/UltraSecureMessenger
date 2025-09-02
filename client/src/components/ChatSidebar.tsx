@@ -12,6 +12,8 @@ import { useTheme } from "./ThemeProvider";
 import { cn } from "@/lib/utils";
 import type { Chat, User } from "@shared/schema";
 import ProfileSettings from "./ProfileSettings";
+import ContactsManager from "./ContactsManager"; // Assuming this component will be created
+import GroupsManager from "./GroupsManager"; // Assuming this component will be created
 
 interface ChatSidebarProps {
   selectedChatId: string | null;
@@ -27,7 +29,7 @@ type ChatWithExtras = Chat & {
 export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) {
   const { user: loggedInUser } = useAuth(); // Renamed to avoid conflict with fetched user
   const { theme, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState<"chats" | "groups" | "channels">("chats");
+  const [activeTab, setActiveTab] = useState<"chats" | "groups" | "channels" | "contacts">("chats"); // Added 'contacts' tab
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewChatDialog, setShowNewChatDialog] = useState(false);
   const [showProfileSettings, setShowProfileSettings] = useState(false);
@@ -99,6 +101,8 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
         return chat.isGroup && matchesSearch;
       case "channels":
         return false; // Channels not implemented yet
+      case "contacts":
+        return false; // Contacts tab content handled by ContactsManager
       default:
         return matchesSearch;
     }
@@ -212,6 +216,15 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
           <Hash className="h-4 w-4 mr-2" />
           Channels
         </Button>
+        <Button
+          variant={activeTab === "contacts" ? "default" : "ghost"}
+          className="flex-1 rounded-none"
+          onClick={() => setActiveTab("contacts")}
+          data-testid="button-tab-contacts"
+        >
+          <UserIcon className="h-4 w-4 mr-2" />
+          Contacts
+        </Button>
       </div>
 
       {/* New Chat Button */}
@@ -264,62 +277,71 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
         </Dialog>
       </div>
 
-      {/* Chat List */}
-      <div className="flex-1 overflow-y-auto">
-        {isChatsLoading || isUserLoading ? (
-          <div className="p-4 text-center text-muted-foreground">Loading chats...</div>
-        ) : filteredChats.length === 0 ? (
-          <div className="p-4 text-center text-muted-foreground">
-            {activeTab === "chats" ? "No direct chats yet" :
-             activeTab === "groups" ? "No groups yet" :
-             "Channels coming soon"}
-          </div>
-        ) : (
-          filteredChats.map(chat => (
-            <div
-              key={chat.id}
-              className={cn(
-                "p-3 hover:bg-secondary cursor-pointer border-b border-border transition-colors",
-                selectedChatId === chat.id && "bg-secondary"
-              )}
-              onClick={() => onChatSelect(chat.id)}
-              data-testid={`chat-item-${chat.id}`}
-            >
-              <div className="flex items-center space-x-3">
-                <div className="relative">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={getAvatarSrc(chat) || ""} />
-                    <AvatarFallback>{getAvatarFallback(chat)}</AvatarFallback>
-                  </Avatar>
-                  {!chat.isGroup && chat.otherUser?.isOnline && (
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-card rounded-full" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-card-foreground truncate">
-                      {getDisplayName(chat)}
-                    </h3>
-                    {chat.lastMessage && (
-                      <span className="text-xs text-muted-foreground">
-                        {formatTime(chat.lastMessage.createdAt)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground truncate">
-                      {chat.lastMessage?.content || "No messages yet"}
-                    </p>
-                    {chat.unreadCount > 0 && (
-                      <Badge variant="default" className="ml-2 text-xs">
-                        {chat.unreadCount}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
+      {/* Content based on active tab */}
+      <div className="flex-1 overflow-hidden">
+        {activeTab === "contacts" && <ContactsManager />}
+        {activeTab === "groups" && <GroupsManager />}
+        {activeTab === "chats" && (
+          <div className="flex-1 overflow-y-auto">
+            {isChatsLoading || isUserLoading ? (
+              <div className="p-4 text-center text-muted-foreground">Loading chats...</div>
+            ) : filteredChats.length === 0 ? (
+              <div className="p-4 text-center text-muted-foreground">
+                {activeTab === "chats" ? "No direct chats yet" :
+                 activeTab === "groups" ? "No groups yet" :
+                 "Channels coming soon"}
               </div>
-            </div>
-          ))
+            ) : (
+              filteredChats.map(chat => (
+                <div
+                  key={chat.id}
+                  className={cn(
+                    "p-3 hover:bg-secondary cursor-pointer border-b border-border transition-colors",
+                    selectedChatId === chat.id && "bg-secondary"
+                  )}
+                  onClick={() => onChatSelect(chat.id)}
+                  data-testid={`chat-item-${chat.id}`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="relative">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={getAvatarSrc(chat) || ""} />
+                        <AvatarFallback>{getAvatarFallback(chat)}</AvatarFallback>
+                      </Avatar>
+                      {!chat.isGroup && chat.otherUser?.isOnline && (
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-card rounded-full" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-medium text-card-foreground truncate">
+                          {getDisplayName(chat)}
+                        </h3>
+                        {chat.lastMessage && (
+                          <span className="text-xs text-muted-foreground">
+                            {formatTime(chat.lastMessage.createdAt)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground truncate">
+                          {chat.lastMessage?.content || "No messages yet"}
+                        </p>
+                        {chat.unreadCount > 0 && (
+                          <Badge variant="default" className="ml-2 text-xs">
+                            {chat.unreadCount}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+        {activeTab === "channels" && (
+          <div className="p-4 text-center text-muted-foreground">Channels are not implemented yet.</div>
         )}
       </div>
 

@@ -1,9 +1,17 @@
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Shield, MessageCircle, Lock, Users, Zap, Globe, Mail, LogOut } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { MessageCircle, Users, User as UserIcon, Search, Settings, LogOut, Bell, Star } from "lucide-react";
+import { OnboardingFlow } from "@/components/OnboardingFlow";
+import { QuickActions } from "@/components/QuickActions";
+import { ThemeCustomizer } from "@/components/ThemeCustomizer";
+import { AchievementSystem } from "@/components/AchievementSystem";
+import ProfileSettings from "@/components/ProfileSettings";
 
 export default function Landing() {
   const [email, setEmail] = useState("");

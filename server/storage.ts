@@ -245,6 +245,67 @@ export class DatabaseStorage implements IStorage {
       ));
   }
 
+  async updateContactFavorite(userId: string, contactId: string, isFavorite: boolean): Promise<void> {
+    await db
+      .update(userContacts)
+      .set({ isFavorite })
+      .where(and(
+        eq(userContacts.userId, userId),
+        eq(userContacts.contactId, contactId)
+      ));
+  }
+
+  async blockUserContact(userId: string, contactId: string): Promise<void> {
+    await db
+      .update(userContacts)
+      .set({ isBlocked: true })
+      .where(and(
+        eq(userContacts.userId, userId),
+        eq(userContacts.contactId, contactId)
+      ));
+  }
+
+  async unblockUserContact(userId: string, contactId: string): Promise<void> {
+    await db
+      .update(userContacts)
+      .set({ isBlocked: false })
+      .where(and(
+        eq(userContacts.userId, userId),
+        eq(userContacts.contactId, contactId)
+      ));
+  }
+
+  async getMutualContacts(userId: string, contactId: string): Promise<User[]> {
+    const userContactsQuery = db
+      .select({ contactId: userContacts.contactId })
+      .from(userContacts)
+      .where(and(
+        eq(userContacts.userId, userId),
+        eq(userContacts.isBlocked, false)
+      ));
+
+    const contactContactsQuery = db
+      .select({ contactId: userContacts.contactId })
+      .from(userContacts)
+      .where(and(
+        eq(userContacts.userId, contactId),
+        eq(userContacts.isBlocked, false)
+      ));
+
+    const mutualContactIds = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(
+        inArray(users.id, userContactsQuery),
+        inArray(users.id, contactContactsQuery)
+      ));
+
+    return await db
+      .select()
+      .from(users)
+      .where(inArray(users.id, mutualContactIds.map(c => c.id)));
+  }
+
   async searchUsers(query: string, excludeUserId: string): Promise<User[]> {
     return await db
       .select()

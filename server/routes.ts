@@ -179,6 +179,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch('/api/users/contacts/:contactId/favorite', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { contactId } = req.params;
+      const { isFavorite } = req.body;
+      
+      await storage.updateContactFavorite(userId, contactId, isFavorite);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating favorite:", error);
+      res.status(500).json({ message: "Failed to update favorite" });
+    }
+  });
+
+  app.post('/api/users/contacts/:contactId/block', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { contactId } = req.params;
+      
+      await storage.blockUserContact(userId, contactId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error blocking contact:", error);
+      res.status(500).json({ message: "Failed to block contact" });
+    }
+  });
+
+  app.post('/api/users/contacts/:contactId/unblock', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { contactId } = req.params;
+      
+      await storage.unblockUserContact(userId, contactId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error unblocking contact:", error);
+      res.status(500).json({ message: "Failed to unblock contact" });
+    }
+  });
+
+  app.get('/api/users/contacts/mutual/:contactId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { contactId } = req.params;
+      
+      const mutualContacts = await storage.getMutualContacts(userId, contactId);
+      res.json(mutualContacts);
+    } catch (error) {
+      console.error("Error fetching mutual contacts:", error);
+      res.status(500).json({ message: "Failed to fetch mutual contacts" });
+    }
+  });
+
   app.patch('/api/users/online-status', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
