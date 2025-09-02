@@ -237,18 +237,26 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 </Label>
                 <Input
                   id="group-username"
-                  placeholder="@username"
+                  placeholder="@group_nomi"
                   value={groupForm.username}
                   onChange={(e) => {
                     let value = e.target.value;
                     if (value && !value.startsWith('@')) {
                       value = '@' + value;
                     }
+                    // Ensure it starts with @group
+                    if (value && !value.startsWith('@group')) {
+                      if (value.startsWith('@')) {
+                        value = '@group' + value.substring(1);
+                      } else {
+                        value = '@group' + value;
+                      }
+                    }
                     setGroupForm(prev => ({ ...prev, username: value }));
                   }}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Ochiq guruhlar uchun username majburiy
+                  Guruh username @group bilan boshlanishi kerak
                 </p>
               </div>
             )}
@@ -295,7 +303,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 onClick={() => createGroupMutation.mutate(groupForm)}
                 disabled={
                   !groupForm.name.trim() || 
-                  (!groupForm.isPrivate && !groupForm.username.trim()) ||
+                  (!groupForm.isPrivate && (!groupForm.username.trim() || !groupForm.username.startsWith('@group'))) ||
                   createGroupMutation.isPending
                 }
               >
@@ -331,18 +339,26 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 </Label>
                 <Input
                   id="channel-username"
-                  placeholder="@username"
+                  placeholder="@channel_nomi"
                   value={channelForm.username}
                   onChange={(e) => {
                     let value = e.target.value;
                     if (value && !value.startsWith('@')) {
                       value = '@' + value;
                     }
+                    // Ensure it starts with @channel
+                    if (value && !value.startsWith('@channel')) {
+                      if (value.startsWith('@')) {
+                        value = '@channel' + value.substring(1);
+                      } else {
+                        value = '@channel' + value;
+                      }
+                    }
                     setChannelForm(prev => ({ ...prev, username: value }));
                   }}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Ochiq kanallar uchun username majburiy
+                  Kanal username @channel bilan boshlanishi kerak
                 </p>
               </div>
             )}
@@ -389,7 +405,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 onClick={() => createChannelMutation.mutate(channelForm)}
                 disabled={
                   !channelForm.name.trim() || 
-                  (!channelForm.isPrivate && !channelForm.username.trim()) ||
+                  (!channelForm.isPrivate && (!channelForm.username.trim() || !channelForm.username.startsWith('@channel'))) ||
                   createChannelMutation.isPending
                 }
               >
