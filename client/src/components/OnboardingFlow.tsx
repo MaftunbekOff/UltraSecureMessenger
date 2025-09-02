@@ -36,7 +36,7 @@ const ONBOARDING_STEPS = [
   }
 ];
 
-export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
+export function OnboardingFlow({ onClose }: { onClose: () => void }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [completed, setCompleted] = useState(false);
 
@@ -45,12 +45,12 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
       setCurrentStep(currentStep + 1);
     } else {
       setCompleted(true);
-      setTimeout(() => onComplete(), 1500);
+      setTimeout(() => onClose(), 1500);
     }
   };
 
   const handleSkip = () => {
-    onComplete();
+    onClose();
   };
 
   if (completed) {
