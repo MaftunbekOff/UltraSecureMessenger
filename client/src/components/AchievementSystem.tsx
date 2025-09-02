@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -138,9 +138,11 @@ export function AchievementSystem({ userStats = {}, onClose }: { userStats?: any
   const [currentLevel, setCurrentLevel] = useState(LEVELS[0]);
   const [newUnlocks, setNewUnlocks] = useState<string[]>([]);
 
+  const memoizedUserStats = useMemo(() => userStats, [userStats.totalMessages, userStats.totalGroupChats, userStats.totalFileShares, userStats.totalReactions, userStats.loginStreak]);
+
   const checkAchievements = useCallback(() => {
-    const { totalPoints: calculatedPoints, achievementsProgress } = calculateStats(userStats);
-    
+    const { totalPoints: calculatedPoints, achievementsProgress } = calculateStats(memoizedUserStats);
+
     const updatedAchievements = ACHIEVEMENTS.map(achievement => {
       const progressInfo = achievementsProgress[achievement.id];
       const isUnlocked = progressInfo.unlocked;
@@ -178,7 +180,7 @@ export function AchievementSystem({ userStats = {}, onClose }: { userStats?: any
     if (level.level !== currentLevel.level) {
       setCurrentLevel(level);
     }
-  }, [userStats, achievements, totalPoints, currentLevel]); // Include dependencies that are used inside
+  }, [achievements, memoizedUserStats]);
 
   useEffect(() => {
     checkAchievements();

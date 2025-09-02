@@ -9,9 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ContactsManager from "@/components/ContactsManager";
 import GroupsManager from "@/components/GroupsManager";
 import {
-  Search,
   MessageCircle,
   Users,
+  Settings,
+  Search,
   Plus,
   Hash,
   Clock

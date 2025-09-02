@@ -13,6 +13,7 @@ import {
   MessageCircle,
   Plus
 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface Contact {
   id: string;
@@ -190,6 +191,60 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
           ))
         )}
       </ScrollArea>
+
+      {/* Add Contact Dialog */}
+      <div className="absolute bottom-4 right-4">
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button size="icon" className="rounded-full h-12 w-12">
+              <Plus className="h-6 w-6" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Yangi kontakt qo'shish</DialogTitle>
+              <DialogDescription>
+                Yangi kontakt qo'shish uchun email manzilini kiriting
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Input
+                  id="email"
+                  placeholder="Email manzil"
+                  className="col-span-3"
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                />
+                <Button type="submit" onClick={() => setUserSearchQuery(userSearchQuery)} disabled={userSearchQuery.length === 0}>
+                  Qidirish
+                </Button>
+              </div>
+
+              {searchResults.length > 0 && (
+                <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+                  {searchResults.map((user: any, index: number) => (
+                    <div
+                      key={user.id}
+                      className="flex items-center justify-between p-2 rounded-md hover:bg-gray-100"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-xs">
+                          {user.displayName.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-sm font-medium">{user.displayName}</span>
+                      </div>
+                      <Button variant="secondary" size="sm" onClick={() => handleStartChat(user.id)}>
+                        Chat
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }

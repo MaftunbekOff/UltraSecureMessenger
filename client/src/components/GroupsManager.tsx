@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +13,7 @@ import {
   Hash,
   Plus
 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface Group {
   id: string;
@@ -157,6 +157,42 @@ export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
           )}
         </div>
       </ScrollArea>
+      
+      {/* Dialog for creating new group */}
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="ghost" className="absolute bottom-4 right-4 rounded-full p-2">
+            <Plus className="h-6 w-6" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Yangi guruh yaratish</DialogTitle>
+            <DialogDescription>
+              Yangi guruh yaratish uchun nom va tavsifni kiriting
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Input
+                id="name"
+                placeholder="Guruh nomi"
+                className="col-span-4"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Input
+                id="description"
+                placeholder="Guruh tavsifi (ixtiyoriy)"
+                className="col-span-4"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button type="submit">Yaratish</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
