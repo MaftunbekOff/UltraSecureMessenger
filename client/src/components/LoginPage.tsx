@@ -14,10 +14,10 @@ export default function LoginPage() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email || !email.includes('@')) {
+    if (!email || !email.includes('@') || email.length < 5) {
       toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address",
+        title: "Email noto'g'ri",
+        description: "Iltimos, to'g'ri email manzilini kiriting",
         variant: "destructive",
       });
       return;
@@ -32,26 +32,33 @@ export default function LoginPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email }),
+        credentials: 'include', // Include cookies
       });
 
       if (response.ok) {
+        const data = await response.json();
         toast({
-          title: "Login Successful",
-          description: "Welcome to UltraSecure Messenger!",
+          title: "Muvaffaqiyatli kirish",
+          description: "UltraSecure Messenger ga xush kelibsiz!",
         });
-        window.location.href = "/";
+        // Wait a bit for the cookie to be set
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 100);
       } else {
         const error = await response.json();
+        console.error("Login error:", error);
         toast({
-          title: "Login Failed",
-          description: error.message || "Please try again",
+          title: "Kirish xatoligi",
+          description: error.message || "Iltimos, qayta urinib ko'ring",
           variant: "destructive",
         });
       }
     } catch (error) {
+      console.error("Network error:", error);
       toast({
-        title: "Login Error",
-        description: "Network error. Please try again.",
+        title: "Tarmoq xatoligi",
+        description: "Internet aloqasini tekshirib, qayta urinib ko'ring",
         variant: "destructive",
       });
     } finally {

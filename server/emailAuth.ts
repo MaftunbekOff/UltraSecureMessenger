@@ -65,8 +65,18 @@ export async function setupEmailAuth(app: Express) {
     try {
       const { email } = req.body;
       
-      if (!email || !email.includes('@')) {
-        return res.status(400).json({ message: 'Valid email is required' });
+      console.log('Login attempt for email:', email);
+      
+      if (!email || !email.includes('@') || email.length < 5) {
+        console.log('Invalid email format:', email);
+        return res.status(400).json({ message: 'To\'g\'ri email manzili talab qilinadi' });
+      }
+
+      // Email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        console.log('Email regex validation failed:', email);
+        return res.status(400).json({ message: 'Email formati noto\'g\'ri' });
       }
 
       // Upsert user with email
@@ -78,6 +88,8 @@ export async function setupEmailAuth(app: Express) {
         profileImageUrl: null,
       });
 
+      console.log('User created/found:', user.id);
+
       // Generate JWT token
       const token = generateJWT(user.id, user.email);
       
@@ -86,13 +98,15 @@ export async function setupEmailAuth(app: Express) {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        sameSite: 'strict'
+        sameSite: 'lax', // Changed from strict to lax for better compatibility
+        path: '/'
       });
 
-      res.json({ user, message: 'Login successful' });
+      console.log('Login successful for user:', user.id);
+      res.json({ user, message: 'Muvaffaqiyatli kirish' });
     } catch (error) {
       console.error('Email login error:', error);
-      res.status(500).json({ message: 'Login failed' });
+      res.status(500).json({ message: 'Server xatoligi. Iltimos, qayta urinib ko\'ring.' });
     }
   });
 
