@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger,
   MessageCircle,
   Phone,
   Video,

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -25,13 +25,36 @@ type ChatWithExtras = Chat & {
 };
 
 export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) {
-  const { user } = useAuth();
+  const { user: loggedInUser } = useAuth(); // Renamed to avoid conflict with fetched user
   const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<"chats" | "groups" | "channels">("chats");
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewChatDialog, setShowNewChatDialog] = useState(false);
   const [showProfileSettings, setShowProfileSettings] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState("");
+
+  const queryClient = useQueryClient();
+
+  // Fetch the logged-in user's details (assuming this is what useAuth provides)
+  const { data: user, isLoading: isUserLoading } = useQuery<User>({
+    queryKey: ['/api/auth/user'],
+    queryFn: async () => {
+      const response = await fetch('/api/auth/user', {
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        // If user is not authenticated, it might return a 401 or similar
+        // Depending on backend, you might want to handle this gracefully
+        // For now, we assume a successful fetch or an error
+        throw new Error('Not authenticated');
+      }
+      return response.json();
+    },
+    // Keep the user data fresh, but don't refetch on every render unless necessary
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+
 
   // Fetch user's chats
   const { data: chats = [], isLoading: isChatsLoading } = useQuery<ChatWithExtras[]>({
@@ -63,7 +86,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
 
   // Filter chats based on active tab and search
   const filteredChats = chats.filter(chat => {
-    const matchesSearch = searchQuery === "" || 
+    const matchesSearch = searchQuery === "" ||
       (chat.isGroup ? chat.name?.toLowerCase().includes(searchQuery.toLowerCase()) :
        chat.otherUser?.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
        chat.otherUser?.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -106,7 +129,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
     if (chat.isGroup) {
       return chat.name || "Unnamed Group";
     }
-    return chat.otherUser?.displayName || 
+    return chat.otherUser?.displayName ||
            `${chat.otherUser?.firstName || ""} ${chat.otherUser?.lastName || ""}`.trim() ||
            chat.otherUser?.email || "Unknown User";
   };
@@ -243,12 +266,12 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
 
       {/* Chat List */}
       <div className="flex-1 overflow-y-auto">
-        {isChatsLoading ? (
+        {isChatsLoading || isUserLoading ? (
           <div className="p-4 text-center text-muted-foreground">Loading chats...</div>
         ) : filteredChats.length === 0 ? (
           <div className="p-4 text-center text-muted-foreground">
-            {activeTab === "chats" ? "No direct chats yet" : 
-             activeTab === "groups" ? "No groups yet" : 
+            {activeTab === "chats" ? "No direct chats yet" :
+             activeTab === "groups" ? "No groups yet" :
              "Channels coming soon"}
           </div>
         ) : (

@@ -1,11 +1,11 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Mail } from "lucide-react";
+import { Shield, Mail, MessageCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -13,7 +13,7 @@ export default function LoginPage() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !email.includes('@')) {
       toast({
         title: "Invalid Email",
@@ -24,7 +24,7 @@ export default function LoginPage() {
     }
 
     setIsLoading(true);
-    
+
     try {
       const response = await fetch('/api/auth/email/login', {
         method: 'POST',
@@ -84,7 +84,7 @@ export default function LoginPage() {
                 data-testid="input-email"
               />
             </div>
-            
+
             <Button 
               type="submit" 
               className="w-full" 
@@ -96,7 +96,7 @@ export default function LoginPage() {
               {isLoading ? "Signing in..." : "Continue with Email"}
             </Button>
           </form>
-          
+
           <div className="text-center text-sm text-muted-foreground mt-4">
             <p>By signing in, you agree to our Terms of Service and Privacy Policy</p>
           </div>

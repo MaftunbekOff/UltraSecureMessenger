@@ -111,7 +111,7 @@ export async function setupEmailAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  const token = req.cookies.auth_token;
+  const token = req.cookies?.auth_token;
   
   if (!token) {
     return res.status(401).json({ message: "No authentication token" });
