@@ -296,7 +296,7 @@ export default function GroupsManager() {
             <p className="text-muted-foreground text-sm">
               {searchQuery 
                 ? "Boshqa nom bilan qidirib ko'ring" 
-                : "Yangi guruh yoki kanal yaratish uchun yuqoridagi "Yaratish" tugmasini bosing"
+                : "Yangi guruh yoki kanal yaratish uchun yuqoridagi 'Yaratish' tugmasini bosing"
               }
             </p>
           </div>
