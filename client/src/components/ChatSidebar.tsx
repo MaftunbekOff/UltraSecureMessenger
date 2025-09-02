@@ -14,7 +14,8 @@ import {
   Settings,
   Plus,
   Hash,
-  Clock
+  Clock,
+  Search
 } from "lucide-react";
 
 interface User {
