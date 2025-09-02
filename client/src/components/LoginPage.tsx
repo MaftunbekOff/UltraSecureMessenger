@@ -41,10 +41,10 @@ export default function LoginPage() {
           title: "Muvaffaqiyatli kirish",
           description: "UltraSecure Messenger ga xush kelibsiz!",
         });
-        // Wait a bit for the cookie to be set
+        // Wait a bit for the cookie to be set, then reload to trigger auth check
         setTimeout(() => {
-          window.location.href = "/";
-        }, 100);
+          window.location.reload();
+        }, 500);
       } else {
         const error = await response.json();
         console.error("Login error:", error);

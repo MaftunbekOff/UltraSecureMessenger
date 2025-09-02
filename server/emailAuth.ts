@@ -105,10 +105,11 @@ export async function setupEmailAuth(app: Express) {
       // Set token as httpOnly cookie
       res.cookie('auth_token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: false, // Set to false for development
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        sameSite: 'lax', // Changed from strict to lax for better compatibility
-        path: '/'
+        sameSite: 'lax',
+        path: '/',
+        domain: undefined // Let browser handle domain automatically
       });
 
       console.log('Login successful for user:', user.id);
