@@ -230,28 +230,28 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="group-username">
-                Username {!groupForm.isPrivate && <span className="text-red-500">*</span>}
-              </Label>
-              <Input
-                id="group-username"
-                placeholder="@username"
-                value={groupForm.username}
-                onChange={(e) => {
-                  let value = e.target.value;
-                  if (value && !value.startsWith('@')) {
-                    value = '@' + value;
-                  }
-                  setGroupForm(prev => ({ ...prev, username: value }));
-                }}
-              />
-              {!groupForm.isPrivate && (
+            {!groupForm.isPrivate && (
+              <div className="space-y-2">
+                <Label htmlFor="group-username">
+                  Username <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="group-username"
+                  placeholder="@username"
+                  value={groupForm.username}
+                  onChange={(e) => {
+                    let value = e.target.value;
+                    if (value && !value.startsWith('@')) {
+                      value = '@' + value;
+                    }
+                    setGroupForm(prev => ({ ...prev, username: value }));
+                  }}
+                />
                 <p className="text-xs text-muted-foreground">
                   Ochiq guruhlar uchun username majburiy
                 </p>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="group-description">Tavsif (ixtiyoriy)</Label>
@@ -269,7 +269,11 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 id="group-private"
                 checked={groupForm.isPrivate}
                 onCheckedChange={(checked) => 
-                  setGroupForm(prev => ({ ...prev, isPrivate: checked }))
+                  setGroupForm(prev => ({ 
+                    ...prev, 
+                    isPrivate: checked,
+                    username: checked ? "" : prev.username
+                  }))
                 }
               />
               <Label htmlFor="group-private" className="flex items-center gap-2">
@@ -320,28 +324,28 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="channel-username">
-                Username {!channelForm.isPrivate && <span className="text-red-500">*</span>}
-              </Label>
-              <Input
-                id="channel-username"
-                placeholder="@username"
-                value={channelForm.username}
-                onChange={(e) => {
-                  let value = e.target.value;
-                  if (value && !value.startsWith('@')) {
-                    value = '@' + value;
-                  }
-                  setChannelForm(prev => ({ ...prev, username: value }));
-                }}
-              />
-              {!channelForm.isPrivate && (
+            {!channelForm.isPrivate && (
+              <div className="space-y-2">
+                <Label htmlFor="channel-username">
+                  Username <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="channel-username"
+                  placeholder="@username"
+                  value={channelForm.username}
+                  onChange={(e) => {
+                    let value = e.target.value;
+                    if (value && !value.startsWith('@')) {
+                      value = '@' + value;
+                    }
+                    setChannelForm(prev => ({ ...prev, username: value }));
+                  }}
+                />
                 <p className="text-xs text-muted-foreground">
                   Ochiq kanallar uchun username majburiy
                 </p>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="channel-description">Tavsif (ixtiyoriy)</Label>
@@ -359,7 +363,11 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 id="channel-private"
                 checked={channelForm.isPrivate}
                 onCheckedChange={(checked) => 
-                  setChannelForm(prev => ({ ...prev, isPrivate: checked }))
+                  setChannelForm(prev => ({ 
+                    ...prev, 
+                    isPrivate: checked,
+                    username: checked ? "" : prev.username
+                  }))
                 }
               />
               <Label htmlFor="channel-private" className="flex items-center gap-2">
