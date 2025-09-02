@@ -241,19 +241,21 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                   value={groupForm.username}
                   onChange={(e) => {
                     let value = e.target.value;
-                    if (value && !value.startsWith('@')) {
-                      value = '@' + value;
+                    
+                    // Remove @ if user types it
+                    if (value.startsWith('@')) {
+                      value = value.substring(1);
                     }
-                    // Ensure it has @group suffix
-                    if (value && !value.endsWith('group')) {
-                      if (value.startsWith('@')) {
-                        const username = value.substring(1);
-                        value = '@' + username + 'group';
-                      } else {
-                        value = '@' + value + 'group';
-                      }
+                    
+                    // Remove 'group' suffix if user types it
+                    if (value.endsWith('group')) {
+                      value = value.substring(0, value.length - 5);
                     }
-                    setGroupForm(prev => ({ ...prev, username: value }));
+                    
+                    // Add @ prefix and group suffix automatically
+                    const finalValue = value ? `@${value}group` : '';
+                    
+                    setGroupForm(prev => ({ ...prev, username: finalValue }));
                   }}
                 />
                 <p className="text-xs text-muted-foreground">
@@ -344,19 +346,21 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                   value={channelForm.username}
                   onChange={(e) => {
                     let value = e.target.value;
-                    if (value && !value.startsWith('@')) {
-                      value = '@' + value;
+                    
+                    // Remove @ if user types it
+                    if (value.startsWith('@')) {
+                      value = value.substring(1);
                     }
-                    // Ensure it has @channel suffix
-                    if (value && !value.endsWith('channel')) {
-                      if (value.startsWith('@')) {
-                        const username = value.substring(1);
-                        value = '@' + username + 'channel';
-                      } else {
-                        value = '@' + value + 'channel';
-                      }
+                    
+                    // Remove 'channel' suffix if user types it
+                    if (value.endsWith('channel')) {
+                      value = value.substring(0, value.length - 7);
                     }
-                    setChannelForm(prev => ({ ...prev, username: value }));
+                    
+                    // Add @ prefix and channel suffix automatically
+                    const finalValue = value ? `@${value}channel` : '';
+                    
+                    setChannelForm(prev => ({ ...prev, username: finalValue }));
                   }}
                 />
                 <p className="text-xs text-muted-foreground">
