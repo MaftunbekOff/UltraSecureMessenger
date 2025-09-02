@@ -1,67 +1,64 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { apiRequest } from "@/lib/queryClient";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Settings, Search, Plus, Users, User as UserIcon, MessageCircle, Hash } from "lucide-react";
-import { useTheme } from "./ThemeProvider";
-import { cn } from "@/lib/utils";
-import type { Chat, User } from "@shared/schema";
-import ProfileSettings from "./ProfileSettings";
-import ContactsManager from "./ContactsManager"; // Assuming this component will be created
-import GroupsManager from "./GroupsManager"; // Assuming this component will be created
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ContactsManager from "@/components/ContactsManager";
+import GroupsManager from "@/components/GroupsManager";
+import { 
+  Search, 
+  MessageCircle, 
+  Users, 
+  Plus,
+  Hash,
+  Clock
+} from "lucide-react";
+
+interface User {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
+  profileImageUrl?: string;
+  username?: string;
+  isOnline?: boolean;
+  lastSeen?: string;
+}
+
+interface ChatWithExtras {
+  id: string;
+  name: string;
+  type: 'direct' | 'group' | 'channel';
+  participants: User[];
+  lastMessage?: {
+    content: string;
+    timestamp: string;
+    sender: User;
+  };
+  unreadCount?: number;
+  isOnline?: boolean;
+}
 
 interface ChatSidebarProps {
   selectedChatId: string | null;
   onChatSelect: (chatId: string) => void;
 }
 
-type ChatWithExtras = Chat & {
-  lastMessage?: any;
-  unreadCount: number;
-  otherUser?: User;
-};
-
 export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) {
-  const { user: loggedInUser } = useAuth(); // Renamed to avoid conflict with fetched user
-  const { theme, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState<"chats" | "groups" | "channels" | "contacts">("chats"); // Added 'contacts' tab
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showNewChatDialog, setShowNewChatDialog] = useState(false);
-  const [showProfileSettings, setShowProfileSettings] = useState(false);
-  const [userSearchQuery, setUserSearchQuery] = useState("");
-
+  const { user } = useAuth();
   const queryClient = useQueryClient();
-
-  // Fetch the logged-in user's details (assuming this is what useAuth provides)
-  const { data: user, isLoading: isUserLoading } = useQuery<User>({
-    queryKey: ['/api/auth/user'],
-    queryFn: async () => {
-      const response = await fetch('/api/auth/user', {
-        credentials: 'include',
-      });
-      if (!response.ok) {
-        // If user is not authenticated, it might return a 401 or similar
-        // Depending on backend, you might want to handle this gracefully
-        // For now, we assume a successful fetch or an error
-        throw new Error('Not authenticated');
-      }
-      return response.json();
-    },
-    // Keep the user data fresh, but don't refetch on every render unless necessary
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  });
-
+  const [searchQuery, setSearchQuery] = useState("");
+  const [userSearchQuery, setUserSearchQuery] = useState("");
 
   // Fetch user's chats
   const { data: chats = [], isLoading: isChatsLoading } = useQuery<ChatWithExtras[]>({
     queryKey: ["/api/chats"],
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
   });
 
   // Search users for new chat
@@ -70,312 +67,229 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
     enabled: userSearchQuery.length > 0,
   });
 
-  // Create direct chat mutation
-  const createDirectChatMutation = useMutation({
-    mutationFn: async (otherUserId: string) => {
-      return apiRequest("POST", "/api/chats/direct", { otherUserId });
-    },
-    onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
-      setShowNewChatDialog(false);
-      setUserSearchQuery("");
-      // The response should contain the chat data
-      response.json().then((chat: any) => {
-        onChatSelect(chat.id);
+  // Create new chat
+  const createChatMutation = useMutation({
+    mutationFn: async (participantId: string) => {
+      const response = await fetch("/api/chats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ participantId }),
       });
+
+      if (!response.ok) {
+        throw new Error("Failed to create chat");
+      }
+
+      return response.json();
+    },
+    onSuccess: (newChat) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
+      onChatSelect(newChat.id);
+      setUserSearchQuery("");
     },
   });
 
-  // Filter chats based on active tab and search
-  const filteredChats = chats.filter(chat => {
-    const matchesSearch = searchQuery === "" ||
-      (chat.isGroup ? chat.name?.toLowerCase().includes(searchQuery.toLowerCase()) :
-       chat.otherUser?.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-       chat.otherUser?.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-       chat.otherUser?.lastName?.toLowerCase().includes(searchQuery.toLowerCase()));
-
-    switch (activeTab) {
-      case "chats":
-        return !chat.isGroup && matchesSearch;
-      case "groups":
-        return chat.isGroup && matchesSearch;
-      case "channels":
-        return false; // Channels not implemented yet
-      case "contacts":
-        return false; // Contacts tab content handled by ContactsManager
-      default:
-        return matchesSearch;
-    }
-  });
-
-  const handleCreateDirectChat = (otherUserId: string) => {
-    createDirectChatMutation.mutate(otherUserId);
-  };
+  const filteredChats = chats.filter(chat =>
+    chat.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffInHours = Math.abs(now.getTime() - date.getTime()) / 36e5;
 
-    if (diffDays === 0) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else if (diffDays === 1) {
-      return "Yesterday";
-    } else if (diffDays < 7) {
-      return date.toLocaleDateString([], { weekday: 'short' });
-    } else {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString('uz-UZ', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
     }
+    return date.toLocaleDateString('uz-UZ', { 
+      month: 'short', 
+      day: 'numeric' 
+    });
   };
 
-  const getDisplayName = (chat: ChatWithExtras) => {
-    if (chat.isGroup) {
-      return chat.name || "Unnamed Group";
+  const getChatIcon = (chat: ChatWithExtras) => {
+    switch (chat.type) {
+      case 'group':
+        return <Users className="h-4 w-4" />;
+      case 'channel':
+        return <Hash className="h-4 w-4" />;
+      default:
+        return <MessageCircle className="h-4 w-4" />;
     }
-    return chat.otherUser?.displayName ||
-           `${chat.otherUser?.firstName || ""} ${chat.otherUser?.lastName || ""}`.trim() ||
-           chat.otherUser?.email || "Unknown User";
-  };
-
-  const getAvatarSrc = (chat: ChatWithExtras) => {
-    if (chat.isGroup) {
-      return chat.avatarUrl;
-    }
-    return chat.otherUser?.profileImageUrl;
-  };
-
-  const getAvatarFallback = (chat: ChatWithExtras): React.ReactNode => {
-    if (chat.isGroup) {
-      return <Users className="h-4 w-4" />;
-    }
-    const name = getDisplayName(chat);
-    return name.charAt(0).toUpperCase();
   };
 
   return (
-    <div className="w-80 bg-card border-r border-border flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold text-card-foreground">UltraSecure</h1>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleTheme}
-              data-testid="button-toggle-theme"
-            >
-              {theme === "light" ? "🌙" : "☀️"}
-            </Button>
-            <Button variant="ghost" size="sm" data-testid="button-settings" onClick={() => setShowProfileSettings(true)}>
-              <Settings className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Search */}
+    <div className="flex flex-col h-full bg-white">
+      {/* Search */}
+      <div className="p-3 border-b">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Search chats..."
+            placeholder="Chatlarni qidirish..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
-            data-testid="input-search-chats"
           />
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex border-b border-border">
-        <Button
-          variant={activeTab === "chats" ? "default" : "ghost"}
-          className="flex-1 rounded-none"
-          onClick={() => setActiveTab("chats")}
-          data-testid="button-tab-chats"
-        >
-          <MessageCircle className="h-4 w-4 mr-2" />
-          Chats
-        </Button>
-        <Button
-          variant={activeTab === "groups" ? "default" : "ghost"}
-          className="flex-1 rounded-none"
-          onClick={() => setActiveTab("groups")}
-          data-testid="button-tab-groups"
-        >
-          <Users className="h-4 w-4 mr-2" />
-          Groups
-        </Button>
-        <Button
-          variant={activeTab === "channels" ? "default" : "ghost"}
-          className="flex-1 rounded-none"
-          onClick={() => setActiveTab("channels")}
-          data-testid="button-tab-channels"
-        >
-          <Hash className="h-4 w-4 mr-2" />
-          Channels
-        </Button>
-        <Button
-          variant={activeTab === "contacts" ? "default" : "ghost"}
-          className="flex-1 rounded-none"
-          onClick={() => setActiveTab("contacts")}
-          data-testid="button-tab-contacts"
-        >
-          <UserIcon className="h-4 w-4 mr-2" />
-          Contacts
-        </Button>
-      </div>
+      {/* Tabs */}
+      <Tabs defaultValue="chats" className="flex-1 flex flex-col">
+        <TabsList className="grid w-full grid-cols-3 mx-3 mt-2">
+          <TabsTrigger value="chats" className="text-xs">
+            <MessageCircle className="h-3 w-3 mr-1" />
+            Chatlar
+          </TabsTrigger>
+          <TabsTrigger value="contacts" className="text-xs">
+            <Users className="h-3 w-3 mr-1" />
+            Kontaktlar
+          </TabsTrigger>
+          <TabsTrigger value="groups" className="text-xs">
+            <Hash className="h-3 w-3 mr-1" />
+            Guruhlar
+          </TabsTrigger>
+        </TabsList>
 
-      {/* New Chat Button */}
-      <div className="p-2 border-b border-border">
-        <Dialog open={showNewChatDialog} onOpenChange={setShowNewChatDialog}>
-          <DialogTrigger asChild>
-            <Button className="w-full" data-testid="button-new-chat">
-              <Plus className="h-4 w-4 mr-2" />
-              New Chat
-            </Button>
-          </DialogTrigger>
-          <DialogContent data-testid="dialog-new-chat">
-            <DialogHeader>
-              <DialogTitle>Start New Chat</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
+        <TabsContent value="chats" className="flex-1 flex flex-col mt-2">
+          {/* New chat section */}
+          <div className="px-3 mb-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search users..."
+                placeholder="Yangi chat boshlash..."
                 value={userSearchQuery}
                 onChange={(e) => setUserSearchQuery(e.target.value)}
-                data-testid="input-search-users"
+                className="pl-10 h-9"
               />
-              <div className="max-h-60 overflow-y-auto space-y-2">
-                {searchResults.map(searchUser => (
-                  <div
-                    key={searchUser.id}
-                    className="flex items-center justify-between p-2 hover:bg-secondary rounded-md cursor-pointer"
-                    onClick={() => handleCreateDirectChat(searchUser.id)}
-                    data-testid={`user-result-${searchUser.id}`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={searchUser.profileImageUrl || ""} />
-                        <AvatarFallback>
-                          {(searchUser.displayName || searchUser.firstName || "U").charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">
-                          {searchUser.displayName || `${searchUser.firstName || ""} ${searchUser.lastName || ""}`.trim()}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{searchUser.email}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Content based on active tab */}
-      <div className="flex-1 overflow-hidden">
-        {activeTab === "contacts" && <ContactsManager />}
-        {activeTab === "groups" && <GroupsManager />}
-        {activeTab === "chats" && (
-          <div className="flex-1 overflow-y-auto">
-            {isChatsLoading || isUserLoading ? (
-              <div className="p-4 text-center text-muted-foreground">Loading chats...</div>
-            ) : filteredChats.length === 0 ? (
-              <div className="p-4 text-center text-muted-foreground">
-                {activeTab === "chats" ? "No direct chats yet" :
-                 activeTab === "groups" ? "No groups yet" :
-                 "Channels coming soon"}
+            
+            {/* Search results */}
+            {searchResults.length > 0 && (
+              <div className="mt-2 border rounded-lg bg-white shadow-sm">
+                <ScrollArea className="max-h-32">
+                  {searchResults.map((foundUser) => (
+                    <div
+                      key={foundUser.id}
+                      className="flex items-center justify-between p-2 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+                      onClick={() => createChatMutation.mutate(foundUser.id)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
+                          {foundUser.firstName?.charAt(0) || foundUser.email.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">
+                            {foundUser.displayName || foundUser.firstName || foundUser.email}
+                          </p>
+                          <p className="text-xs text-gray-500">@{foundUser.username || foundUser.email}</p>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </ScrollArea>
               </div>
-            ) : (
-              filteredChats.map(chat => (
-                <div
-                  key={chat.id}
-                  className={cn(
-                    "p-3 hover:bg-secondary cursor-pointer border-b border-border transition-colors",
-                    selectedChatId === chat.id && "bg-secondary"
-                  )}
-                  onClick={() => onChatSelect(chat.id)}
-                  data-testid={`chat-item-${chat.id}`}
-                >
-                  <div className="flex items-center space-x-3">
+            )}
+          </div>
+
+          {/* Chat list */}
+          <ScrollArea className="flex-1">
+            <div className="space-y-1 px-2">
+              {isChatsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+                </div>
+              ) : filteredChats.length === 0 ? (
+                <div className="text-center py-8 px-4">
+                  <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500">Hali chatlar yo'q</p>
+                  <p className="text-xs text-gray-400">Yangi chat boshlash uchun yuqorida qidiring</p>
+                </div>
+              ) : (
+                filteredChats.map((chat) => (
+                  <div
+                    key={chat.id}
+                    onClick={() => onChatSelect(chat.id)}
+                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                      selectedChatId === chat.id
+                        ? "bg-blue-50 border border-blue-200"
+                        : "hover:bg-gray-50"
+                    }`}
+                  >
+                    {/* Chat avatar */}
                     <div className="relative">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={getAvatarSrc(chat) || ""} />
-                        <AvatarFallback>{getAvatarFallback(chat)}</AvatarFallback>
-                      </Avatar>
-                      {!chat.isGroup && chat.otherUser?.isOnline && (
-                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-card rounded-full" />
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
+                        {chat.name.charAt(0).toUpperCase()}
+                      </div>
+                      {chat.isOnline && (
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
                       )}
                     </div>
+
+                    {/* Chat info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-card-foreground truncate">
-                          {getDisplayName(chat)}
+                        <h3 className="font-medium text-sm truncate">
+                          {chat.name}
                         </h3>
-                        {chat.lastMessage && (
-                          <span className="text-xs text-muted-foreground">
-                            {formatTime(chat.lastMessage.createdAt)}
+                        <div className="flex items-center gap-1">
+                          {chat.unreadCount && chat.unreadCount > 0 && (
+                            <Badge variant="destructive" className="h-5 min-w-5 text-xs px-1">
+                              {chat.unreadCount > 99 ? "99+" : chat.unreadCount}
+                            </Badge>
+                          )}
+                          {chat.lastMessage && (
+                            <span className="text-xs text-gray-500">
+                              {formatTime(chat.lastMessage.timestamp)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {chat.lastMessage && (
+                        <p className="text-xs text-gray-600 truncate mt-1">
+                          {chat.lastMessage.sender.id !== user?.id && (
+                            <span className="font-medium">
+                              {chat.lastMessage.sender.firstName || chat.lastMessage.sender.email}: 
+                            </span>
+                          )}
+                          {" " + chat.lastMessage.content}
+                        </p>
+                      )}
+                      
+                      <div className="flex items-center gap-1 mt-1">
+                        {getChatIcon(chat)}
+                        <span className="text-xs text-gray-400 capitalize">
+                          {chat.type === 'direct' ? 'Shaxsiy' : chat.type === 'group' ? 'Guruh' : 'Kanal'}
+                        </span>
+                        {chat.participants && (
+                          <span className="text-xs text-gray-400">
+                            • {chat.participants.length} a'zo
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground truncate">
-                          {chat.lastMessage?.content || "No messages yet"}
-                        </p>
-                        {chat.unreadCount > 0 && (
-                          <Badge variant="default" className="ml-2 text-xs">
-                            {chat.unreadCount}
-                          </Badge>
-                        )}
-                      </div>
                     </div>
                   </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-        {activeTab === "channels" && (
-          <div className="p-4 text-center text-muted-foreground">Channels are not implemented yet.</div>
-        )}
-      </div>
-
-      {/* User Profile */}
-      {user && (
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center space-x-3">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={(user as any)?.profileImageUrl || ""} />
-              <AvatarFallback>
-                {((user as any)?.displayName || (user as any)?.firstName || "U").charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <h4 className="font-medium text-card-foreground text-sm">
-                {(user as any)?.displayName || `${(user as any)?.firstName || ""} ${(user as any)?.lastName || ""}`.trim() || "User"}
-              </h4>
-              <p className="text-xs text-green-500">Online</p>
+                ))
+              )}
             </div>
-            <Button variant="ghost" size="sm" data-testid="button-user-menu" onClick={() => setShowProfileSettings(true)}>
-              <UserIcon className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+          </ScrollArea>
+        </TabsContent>
 
-      {/* Profile Settings Dialog */}
-      {showProfileSettings && (
-        <Dialog open={showProfileSettings} onOpenChange={setShowProfileSettings}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <ProfileSettings onClose={() => setShowProfileSettings(false)} />
-          </DialogContent>
-        </Dialog>
-      )}
+        <TabsContent value="contacts" className="flex-1">
+          <ContactsManager />
+        </TabsContent>
+
+        <TabsContent value="groups" className="flex-1">
+          <GroupsManager />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
