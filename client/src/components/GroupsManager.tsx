@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -95,7 +94,7 @@ export default function GroupsManager() {
     const matchesTab = 
       (activeTab === "channels" && group.isChannel) ||
       (activeTab === "all");
-    
+
     return matchesSearch && matchesTab;
   });
 
@@ -131,11 +130,11 @@ export default function GroupsManager() {
                 </Badge>
               )}
             </div>
-            
+
             <p className="text-sm text-muted-foreground truncate">
               {group.description || `${group.memberCount} a'zo`}
             </p>
-            
+
             <div className="flex items-center gap-4 mt-1">
               <span className="text-xs text-muted-foreground flex items-center gap-1">
                 <Users className="h-3 w-3" />
@@ -183,7 +182,7 @@ export default function GroupsManager() {
                   {formData.isChannel ? "Yangi kanal yaratish" : "Yangi guruh yaratish"}
                 </DialogTitle>
               </DialogHeader>
-              
+
               <div className="space-y-4">
                 <div className="flex items-center justify-center space-x-4">
                   <div className="flex items-center space-x-2">
@@ -294,18 +293,12 @@ export default function GroupsManager() {
             <h3 className="font-medium mb-2">
               {searchQuery ? "Natija topilmadi" : "Guruhlar yo'q"}
             </h3>
-            <p className="text-muted-foreground text-sm mb-4">
+            <p className="text-muted-foreground text-sm">
               {searchQuery 
                 ? "Boshqa nom bilan qidirib ko'ring" 
-                : "Yangi guruh yoki kanal yarating"
+                : "Yangi guruh yoki kanal yaratish uchun yuqoridagi "Yaratish" tugmasini bosing"
               }
             </p>
-            {!searchQuery && (
-              <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Yaratish
-              </Button>
-            )}
           </div>
         ) : (
           <div className="space-y-3">
