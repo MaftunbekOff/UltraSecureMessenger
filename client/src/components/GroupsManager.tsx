@@ -29,7 +29,11 @@ interface Group {
   unreadCount: number;
 }
 
-export default function GroupsManager() {
+interface GroupsManagerProps {
+  onChatCreated?: (chatId: string) => void;
+}
+
+export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -51,7 +55,10 @@ export default function GroupsManager() {
   );
 
   const GroupItem = ({ group }: { group: Group }) => (
-    <Card className="hover:bg-accent cursor-pointer transition-colors">
+    <Card 
+      className="hover:bg-accent cursor-pointer transition-colors"
+      onClick={() => onChatCreated?.(group.id)}
+    >
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
           <div className="relative">

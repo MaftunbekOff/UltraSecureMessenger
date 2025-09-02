@@ -295,12 +295,12 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="contacts" className="flex-1">
-          {isContactsOpen ? <ContactsManager onChatCreated={onChatSelect} /> : null}
+        <TabsContent value="contacts" className="flex-1 mt-0">
+          <ContactsManager onChatCreated={onChatSelect} />
         </TabsContent>
 
-        <TabsContent value="groups" className="flex-1">
-          <GroupsManager />
+        <TabsContent value="groups" className="flex-1 mt-0">
+          <GroupsManager onChatCreated={onChatSelect} />
         </TabsContent>
       </Tabs>
     </div>
