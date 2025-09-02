@@ -1,10 +1,12 @@
+
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "@/hooks/use-toast";
 import { 
   Users, 
   Search,
@@ -35,7 +37,13 @@ interface GroupsManagerProps {
 
 export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
+  const [groupForm, setGroupForm] = useState({
+    name: "",
+    description: "",
+    isPrivate: false,
+  });
 
   // Fetch groups only
   const { data: allGroups = [], isLoading } = useQuery({
@@ -44,6 +52,28 @@ export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
       const response = await fetch("/api/groups");
       if (!response.ok) throw new Error("Failed to fetch groups");
       return response.json();
+    },
+  });
+
+  // Create group mutation
+  const createGroupMutation = useMutation({
+    mutationFn: async (groupData: typeof groupForm) => {
+      const response = await fetch("/api/groups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(groupData),
+      });
+      if (!response.ok) throw new Error("Failed to create group");
+      return response.json();
+    },
+    onSuccess: (group) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+      onChatCreated?.(group.id);
+      setGroupForm({ name: "", description: "", isPrivate: false });
+      toast({ title: "Guruh yaratildi" });
+    },
+    onError: () => {
+      toast({ title: "Xatolik", description: "Guruh yaratib bo'lmadi", variant: "destructive" });
     },
   });
 
@@ -72,24 +102,30 @@ export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
     });
   };
 
+  const handleCreateGroup = () => {
+    if (groupForm.name.trim()) {
+      createGroupMutation.mutate(groupForm);
+    }
+  };
+
   return (
-    <div className="group-list-container flex flex-col h-full bg-white">
+    <div className="group-list-container">
       {/* Search */}
-      <div className="px-3 py-1 border-b">
+      <div className="px-3 py-2 border-b">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
             placeholder="Guruhlarni qidirish..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-8"
+            className="pl-10 h-9"
           />
         </div>
       </div>
 
       {/* Groups List */}
       <ScrollArea className="flex-1">
-        <div className="space-y-1 px-2">
+        <div className="space-y-1 p-2">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
@@ -98,18 +134,18 @@ export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
             <div className="text-center py-8 px-4">
               <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
               <p className="text-sm text-gray-500">Hali guruhlar yo'q</p>
-              <p className="text-xs text-gray-400">Guruh yaratish uchun Quick Actions dan foydalaning</p>
+              <p className="text-xs text-gray-400">Yangi guruh yaratish uchun pastdagi tugmani bosing</p>
             </div>
           ) : (
-            filteredGroups.map((group: Group) => (
+            filteredGroups.map((group: Group, groupIndex: number) => (
               <div
-                key={group.id}
+                key={`group-${group.id}-${groupIndex}`}
                 onClick={() => onChatCreated?.(group.id)}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
+                className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
               >
                 {/* Group avatar */}
                 <div className="relative">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                  <div className="w-11 h-11 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
                     {group.name.charAt(0).toUpperCase()}
                   </div>
                   {group.isPrivate && (
@@ -140,15 +176,14 @@ export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
                     </div>
                   </div>
 
-                  <p className="text-xs text-gray-600 truncate mt-1">
+                  <p className="text-xs text-gray-600 truncate">
                     {group.description || `${group.memberCount} a'zo`}
                   </p>
 
                   <div className="flex items-center gap-1 mt-1">
-                    <Users className="h-4 w-4" />
-                    <span className="text-xs text-gray-400">Guruh</span>
+                    <Users className="h-3 w-3 text-gray-400" />
                     <span className="text-xs text-gray-400">
-                      • {group.memberCount} a'zo
+                      {group.memberCount} a'zo
                     </span>
                   </div>
                 </div>
@@ -158,41 +193,48 @@ export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
         </div>
       </ScrollArea>
       
-      {/* Dialog for creating new group */}
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button variant="ghost" className="absolute bottom-4 right-4 rounded-full p-2">
-            <Plus className="h-6 w-6" />
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Yangi guruh yaratish</DialogTitle>
-            <DialogDescription>
-              Yangi guruh yaratish uchun nom va tavsifni kiriting
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
+      {/* Create Group Button */}
+      <div className="p-2 border-t">
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="w-full">
+              <Plus className="h-4 w-4 mr-2" />
+              Yangi guruh
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Yangi guruh yaratish</DialogTitle>
+              <DialogDescription>
+                Yangi guruh yaratish uchun nom va tavsifni kiriting
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
               <Input
-                id="name"
                 placeholder="Guruh nomi"
-                className="col-span-4"
+                value={groupForm.name}
+                onChange={(e) => setGroupForm({ ...groupForm, name: e.target.value })}
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
               <Input
-                id="description"
                 placeholder="Guruh tavsifi (ixtiyoriy)"
-                className="col-span-4"
+                value={groupForm.description}
+                onChange={(e) => setGroupForm({ ...groupForm, description: e.target.value })}
               />
             </div>
-          </div>
-          <div className="flex justify-end">
-            <Button type="submit">Yaratish</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+            <div className="flex justify-end gap-2">
+              <DialogTrigger asChild>
+                <Button variant="outline">Bekor qilish</Button>
+              </DialogTrigger>
+              <Button 
+                onClick={handleCreateGroup}
+                disabled={!groupForm.name.trim() || createGroupMutation.isPending}
+              >
+                {createGroupMutation.isPending ? "Yaratilmoqda..." : "Yaratish"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }

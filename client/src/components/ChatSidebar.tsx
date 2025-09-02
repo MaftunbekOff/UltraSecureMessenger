@@ -12,7 +12,6 @@ import {
   MessageCircle,
   Users,
   Settings,
-  Search,
   Plus,
   Hash,
   Clock

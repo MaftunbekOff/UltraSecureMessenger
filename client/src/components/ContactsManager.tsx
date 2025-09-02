@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -106,98 +107,84 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
     return `${diffDays} kun oldin`;
   };
 
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInHours = Math.abs(now.getTime() - date.getTime()) / 36e5;
-
-    if (diffInHours < 24) {
-      return date.toLocaleTimeString('uz-UZ', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    }
-    return date.toLocaleDateString('uz-UZ', {
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="contact-list-container">
       {/* Search contacts */}
-      <div className="px-3 py-1 border-b">
+      <div className="px-3 py-2 border-b">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
             placeholder="Kontaktlarni qidirish..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-8"
+            className="pl-10 h-9"
           />
         </div>
       </div>
 
       {/* Contacts List */}
       <ScrollArea className="flex-1">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-          </div>
-        ) : filteredContacts.length === 0 ? (
-          <div className="text-center py-8 px-4">
-            <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">Kontaktlar yo'q</p>
-            <p className="text-xs text-gray-400">Yangi kontakt qo'shish uchun qidiring</p>
-          </div>
-        ) : (
-          filteredContacts.map((contact) => (
-            <div
-              key={contact.id}
-              onClick={() => handleStartChat(contact.id)}
-              className="flex items-center gap-2 px-2 py-1.5 cursor-pointer transition-colors hover:bg-gray-50"
-            >
-              {/* Contact avatar */}
-              <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                  {(contact.displayName || contact.username || contact.email || "U").charAt(0).toUpperCase()}
-                </div>
-                {contact.isOnline && (
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
-                )}
-              </div>
-
-              {/* Contact info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium text-sm truncate">
-                    {contact.nickname || contact.displayName || contact.username || contact.email}
-                  </h3>
-                  <span className="text-xs text-gray-500">
-                    {contact.isOnline ? "Online" : getLastSeenText(contact.lastSeen)}
-                  </span>
-                </div>
-
-                <p className="text-xs text-gray-600 truncate mt-1">
-                  @{contact.username || contact.email}
-                </p>
-
-                <div className="flex items-center gap-1 mt-1">
-                  <MessageCircle className="h-4 w-4" />
-                  <span className="text-xs text-gray-400">Shaxsiy</span>
-                </div>
-              </div>
+        <div className="space-y-1 p-2">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
             </div>
-          ))
-        )}
+          ) : filteredContacts.length === 0 ? (
+            <div className="text-center py-8 px-4">
+              <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-sm text-gray-500">Kontaktlar yo'q</p>
+              <p className="text-xs text-gray-400">Yangi kontakt qo'shish uchun qidiring</p>
+            </div>
+          ) : (
+            filteredContacts.map((contact, contactIndex) => (
+              <div
+                key={`contact-${contact.id}-${contactIndex}`}
+                onClick={() => handleStartChat(contact.id)}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
+              >
+                {/* Contact avatar */}
+                <div className="relative">
+                  <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                    {(contact.displayName || contact.username || contact.email || "U").charAt(0).toUpperCase()}
+                  </div>
+                  {contact.isOnline && (
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                  )}
+                </div>
+
+                {/* Contact info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium text-sm truncate">
+                      {contact.nickname || contact.displayName || contact.username || contact.email}
+                    </h3>
+                    <span className="text-xs text-gray-500">
+                      {contact.isOnline ? "Online" : getLastSeenText(contact.lastSeen)}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-gray-600 truncate">
+                    @{contact.username || contact.email}
+                  </p>
+
+                  <div className="flex items-center gap-1 mt-1">
+                    <MessageCircle className="h-3 w-3 text-gray-400" />
+                    <span className="text-xs text-gray-400">Shaxsiy chat</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </ScrollArea>
 
       {/* Add Contact Dialog */}
-      <div className="absolute bottom-4 right-4">
+      <div className="p-2 border-t">
         <Dialog>
           <DialogTrigger asChild>
-            <Button size="icon" className="rounded-full h-12 w-12">
-              <Plus className="h-6 w-6" />
+            <Button variant="outline" className="w-full">
+              <Plus className="h-4 w-4 mr-2" />
+              Yangi kontakt
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
@@ -208,22 +195,24 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
+              <div className="flex gap-2">
                 <Input
-                  id="email"
                   placeholder="Email manzil"
-                  className="col-span-3"
                   value={userSearchQuery}
                   onChange={(e) => setUserSearchQuery(e.target.value)}
+                  className="flex-1"
                 />
-                <Button type="submit" onClick={() => setUserSearchQuery(userSearchQuery)} disabled={userSearchQuery.length === 0}>
+                <Button 
+                  onClick={() => setUserSearchQuery(userSearchQuery)} 
+                  disabled={userSearchQuery.length === 0}
+                >
                   Qidirish
                 </Button>
               </div>
 
               {searchResults.length > 0 && (
-                <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
-                  {searchResults.map((user: any, index: number) => (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {searchResults.map((user: any) => (
                     <div
                       key={user.id}
                       className="flex items-center justify-between p-2 rounded-md hover:bg-gray-100"

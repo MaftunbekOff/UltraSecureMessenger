@@ -1,324 +1,252 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, Star, MessageCircle, Users, Heart, Zap, Crown, Shield } from "lucide-react";
+import { Trophy, Star, Target, Zap, Award, Crown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-const ACHIEVEMENTS = [
+interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  progress: number;
+  maxProgress: number;
+  unlocked: boolean;
+  points: number;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+}
+
+interface UserStats {
+  messagesCount: number;
+  friendsCount: number;
+  groupsCreated: number;
+  reactionsGiven: number;
+  has2FA: boolean;
+  profileComplete: boolean;
+}
+
+interface Level {
+  level: number;
+  title: string;
+  minPoints: number;
+  maxPoints: number;
+  color: string;
+}
+
+const LEVELS: Level[] = [
+  { level: 1, title: "Yangi foydalanuvchi", minPoints: 0, maxPoints: 99, color: "gray" },
+  { level: 2, title: "Faol foydalanuvchi", minPoints: 100, maxPoints: 299, color: "blue" },
+  { level: 3, title: "Chat ustasi", minPoints: 300, maxPoints: 599, color: "green" },
+  { level: 4, title: "Hamjamiyat rahbari", minPoints: 600, maxPoints: 999, color: "purple" },
+  { level: 5, title: "Legenda", minPoints: 1000, maxPoints: Infinity, color: "gold" },
+];
+
+const INITIAL_ACHIEVEMENTS: Achievement[] = [
   {
-    id: 'first_message',
-    title: 'Birinchi xabar',
-    description: 'Birinchi xabaringizni yuboring',
-    icon: MessageCircle,
-    category: 'messaging',
+    id: "first_message",
+    title: "Birinchi xabar",
+    description: "Birinchi xabaringizni yuboring",
+    icon: <Star className="h-5 w-5" />,
+    progress: 0,
+    maxProgress: 1,
+    unlocked: false,
     points: 10,
-    unlocked: false
+    rarity: 'common'
   },
   {
-    id: 'social_butterfly',
-    title: 'Ijtimoiy kapalak',
-    description: '10 ta do\'st qo\'shing',
-    icon: Users,
-    category: 'social',
+    id: "social_butterfly",
+    title: "Ijtimoiy kapalak",
+    description: "5 ta do'st qo'shing",
+    icon: <Trophy className="h-5 w-5" />,
+    progress: 0,
+    maxProgress: 5,
+    unlocked: false,
     points: 50,
-    unlocked: false,
-    progress: 0,
-    target: 10
+    rarity: 'rare'
   },
   {
-    id: 'chat_master',
-    title: 'Chat ustasi',
-    description: '100 ta xabar yuboring',
-    icon: Zap,
-    category: 'messaging',
-    points: 100,
-    unlocked: false,
+    id: "group_creator",
+    title: "Guruh yaratuvchisi",
+    description: "Birinchi guruhingizni yarating",
+    icon: <Crown className="h-5 w-5" />,
     progress: 0,
-    target: 100
-  },
-  {
-    id: 'group_creator',
-    title: 'Guruh yaratuvchisi',
-    description: '5 ta guruh yarating',
-    icon: Crown,
-    category: 'social',
+    maxProgress: 1,
+    unlocked: false,
     points: 75,
-    unlocked: false,
-    progress: 0,
-    target: 5
-  },
-  {
-    id: 'reaction_lover',
-    title: 'Reaksiya sevuvchi',
-    description: '50 ta reaksiya qo\'shing',
-    icon: Heart,
-    category: 'engagement',
-    points: 30,
-    unlocked: false,
-    progress: 0,
-    target: 50
-  },
-  {
-    id: 'security_champion',
-    title: 'Xavfsizlik chempioni',
-    description: '2FA va barcha xavfsizlik sozlamalarini yoqing',
-    icon: Shield,
-    category: 'security',
-    points: 200,
-    unlocked: false
+    rarity: 'epic'
   }
 ];
 
-const LEVELS = [
-  { level: 1, minPoints: 0, title: 'Yangi foydalanuvchi', color: 'bg-gray-500' },
-  { level: 2, minPoints: 100, title: 'Faol foydalanuvchi', color: 'bg-blue-500' },
-  { level: 3, minPoints: 300, title: 'Chat ustasi', color: 'bg-green-500' },
-  { level: 4, minPoints: 600, title: 'Ijtimoiy lider', color: 'bg-purple-500' },
-  { level: 5, minPoints: 1000, title: 'Messenger ustasi', color: 'bg-yellow-500' },
-];
+interface AchievementSystemProps {
+  userStats: UserStats;
+  onClose: () => void;
+}
 
-// Helper function to calculate stats, used to avoid recalculating in checkAchievements
-const calculateStats = (stats = {}) => {
-  const defaultStats = {
-    messagesCount: 0,
-    friendsCount: 0,
-    groupsCreated: 0,
-    reactionsGiven: 0,
-    has2FA: false,
-    profileComplete: false,
-    ...stats
+export function AchievementSystem({ userStats, onClose }: AchievementSystemProps) {
+  const [achievements, setAchievements] = useState<Achievement[]>(INITIAL_ACHIEVEMENTS);
+  
+  // Calculate current level based on total points
+  const totalPoints = useMemo(() => {
+    return achievements.reduce((total, achievement) => {
+      return total + (achievement.unlocked ? achievement.points : 0);
+    }, 0);
+  }, [achievements]);
+
+  const currentLevel = useMemo(() => {
+    return LEVELS.reduce((current, level) => 
+      totalPoints >= level.minPoints ? level : current
+    );
+  }, [totalPoints]);
+
+  const nextLevel = useMemo(() => {
+    return LEVELS.find(l => l.level > currentLevel.level);
+  }, [currentLevel]);
+
+  const progressToNext = useMemo(() => {
+    if (!nextLevel) return 100;
+    const currentLevelPoints = totalPoints - currentLevel.minPoints;
+    const pointsNeeded = nextLevel.minPoints - currentLevel.minPoints;
+    return Math.min(100, (currentLevelPoints / pointsNeeded) * 100);
+  }, [totalPoints, currentLevel, nextLevel]);
+
+  // Update achievements based on user stats
+  useEffect(() => {
+    setAchievements(prevAchievements => {
+      return prevAchievements.map(achievement => {
+        let progress = achievement.progress;
+        let unlocked = achievement.unlocked;
+
+        switch (achievement.id) {
+          case "first_message":
+            progress = Math.min(userStats.messagesCount, 1);
+            unlocked = userStats.messagesCount >= 1;
+            break;
+          case "social_butterfly":
+            progress = Math.min(userStats.friendsCount, 5);
+            unlocked = userStats.friendsCount >= 5;
+            break;
+          case "group_creator":
+            progress = Math.min(userStats.groupsCreated, 1);
+            unlocked = userStats.groupsCreated >= 1;
+            break;
+        }
+
+        return { ...achievement, progress, unlocked };
+      });
+    });
+  }, [userStats]);
+
+  const getRarityColor = (rarity: string) => {
+    switch (rarity) {
+      case 'common': return 'text-gray-600';
+      case 'rare': return 'text-blue-600';
+      case 'epic': return 'text-purple-600';
+      case 'legendary': return 'text-yellow-600';
+      default: return 'text-gray-600';
+    }
   };
 
-  let totalPoints = 0;
-  let achievementsProgress = {};
-
-  // Calculate points and progress for each achievement
-  ACHIEVEMENTS.forEach(achievement => {
-    let unlocked = achievement.unlocked;
-    let progress = achievement.progress || 0;
-
-    switch (achievement.id) {
-      case 'first_message':
-        unlocked = defaultStats.messagesCount > 0;
-        break;
-      case 'social_butterfly':
-        progress = defaultStats.friendsCount;
-        unlocked = defaultStats.friendsCount >= 10;
-        break;
-      case 'chat_master':
-        progress = defaultStats.messagesCount;
-        unlocked = defaultStats.messagesCount >= 100;
-        break;
-      case 'group_creator':
-        progress = defaultStats.groupsCreated;
-        unlocked = defaultStats.groupsCreated >= 5;
-        break;
-      case 'reaction_lover':
-        progress = defaultStats.reactionsGiven;
-        unlocked = defaultStats.reactionsGiven >= 50;
-        break;
-      case 'security_champion':
-        unlocked = defaultStats.has2FA && defaultStats.profileComplete;
-        break;
+  const getRarityBadgeColor = (rarity: string) => {
+    switch (rarity) {
+      case 'common': return 'bg-gray-100 text-gray-700';
+      case 'rare': return 'bg-blue-100 text-blue-700';
+      case 'epic': return 'bg-purple-100 text-purple-700';
+      case 'legendary': return 'bg-yellow-100 text-yellow-700';
+      default: return 'bg-gray-100 text-gray-700';
     }
-
-    if (unlocked) {
-      totalPoints += achievement.points;
-    }
-    achievementsProgress[achievement.id] = { unlocked, progress };
-  });
-
-  return { totalPoints, achievementsProgress };
-};
-
-
-export function AchievementSystem({ userStats = {}, onClose }: { userStats?: any; onClose?: () => void }) {
-  const [achievements, setAchievements] = useState(ACHIEVEMENTS);
-  const [totalPoints, setTotalPoints] = useState(0);
-  const [currentLevel, setCurrentLevel] = useState(LEVELS[0]);
-  const [newUnlocks, setNewUnlocks] = useState<string[]>([]);
-
-  const memoizedUserStats = useMemo(() => userStats, [userStats.totalMessages, userStats.totalGroupChats, userStats.totalFileShares, userStats.totalReactions, userStats.loginStreak]);
-
-  const checkAchievements = useCallback(() => {
-    const { totalPoints: calculatedPoints, achievementsProgress } = calculateStats(memoizedUserStats);
-
-    const updatedAchievements = ACHIEVEMENTS.map(achievement => {
-      const progressInfo = achievementsProgress[achievement.id];
-      const isUnlocked = progressInfo.unlocked;
-      const currentProgress = progressInfo.progress;
-      const wasUnlocked = achievements.find(a => a.id === achievement.id)?.unlocked || false;
-
-      // Check for new unlocks
-      if (isUnlocked && !wasUnlocked) {
-        setNewUnlocks(prev => {
-          // Avoid duplicate notifications if the state hasn't been updated yet
-          if (prev.includes(achievement.id)) return prev;
-          return [...prev, achievement.id];
-        });
-      }
-
-      return {
-        ...achievement,
-        unlocked: isUnlocked,
-        progress: currentProgress
-      };
-    });
-
-    // Only update state if there are actual changes
-    if (JSON.stringify(updatedAchievements) !== JSON.stringify(achievements)) {
-      setAchievements(updatedAchievements);
-    }
-
-    if (calculatedPoints !== totalPoints) {
-      setTotalPoints(calculatedPoints);
-    }
-
-    const level = LEVELS.reduce((current, level) =>
-      calculatedPoints >= level.minPoints ? level : current
-    );
-    if (level.level !== currentLevel.level) {
-      setCurrentLevel(level);
-    }
-  }, [achievements, memoizedUserStats]);
-
-  useEffect(() => {
-    checkAchievements();
-  }, [checkAchievements]);
-
-  // Effect to clear newUnlocks after a delay
-  useEffect(() => {
-    if (newUnlocks.length > 0) {
-      const timer = setTimeout(() => {
-        setNewUnlocks([]);
-      }, 5000); // Clear notifications after 5 seconds
-      return () => clearTimeout(timer);
-    }
-  }, [newUnlocks]);
-
-
-  const nextLevel = LEVELS.find(l => l.level > currentLevel.level);
-  const progressToNext = nextLevel
-    ? ((totalPoints - currentLevel.minPoints) / (nextLevel.minPoints - currentLevel.minPoints)) * 100
-    : 100;
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Level Status */}
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Yutuqlar tizimi</h1>
+          <p className="text-gray-600">O'zingizning yutuqlaringizni kuzatib boring</p>
+        </div>
+        <Button variant="outline" onClick={onClose}>
+          Yopish
+        </Button>
+      </div>
+
+      {/* Level Progress Card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5" />
-            Sizning darajangiz
+            <Award className="h-5 w-5" />
+            Daraja: {currentLevel.title}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4 mb-4">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${currentLevel.color}`}>
-              <span className="text-white font-bold">{currentLevel.level}</span>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between text-sm">
+              <span>Joriy daraja: {currentLevel.level}</span>
+              <span>{totalPoints} ochko</span>
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold">{currentLevel.title}</h3>
-              <p className="text-sm text-muted-foreground">{totalPoints} ball</p>
-            </div>
-            <Badge variant="secondary">{currentLevel.level}-daraja</Badge>
-          </div>
-
-          {nextLevel && (
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span>Keyingi darajagacha</span>
-                <span>{nextLevel.minPoints - totalPoints} ball qoldi</span>
-              </div>
-              <Progress value={progressToNext} />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Achievements */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Yutuqlar</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {achievements.map((achievement) => {
-              const Icon = achievement.icon;
-              return (
-                <Card key={achievement.id} className={`relative ${achievement.unlocked ? 'border-green-500' : ''}`}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        achievement.unlocked ? 'bg-green-500' : 'bg-gray-200'
-                      }`}>
-                        <Icon className={`h-5 w-5 ${
-                          achievement.unlocked ? 'text-white' : 'text-gray-500'
-                        }`} />
-                      </div>
-
-                      <div className="flex-1">
-                        <h4 className="font-medium mb-1">{achievement.title}</h4>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {achievement.description}
-                        </p>
-
-                        {achievement.target && (
-                          <div className="mb-2">
-                            <Progress
-                              value={achievement.progress !== undefined && achievement.target !== undefined ? (achievement.progress / achievement.target) * 100 : 0}
-                              className="h-2"
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {achievement.progress} / {achievement.target}
-                            </p>
-                          </div>
-                        )}
-
-                        <Badge variant={achievement.unlocked ? "default" : "secondary"} className="text-xs">
-                          {achievement.points} ball
-                        </Badge>
-                      </div>
-
-                      {achievement.unlocked && (
-                        <Star className="h-5 w-5 text-yellow-500 absolute top-2 right-2" />
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {nextLevel && (
+              <>
+                <Progress value={progressToNext} className="h-2" />
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <span>Keyingi daraja: {nextLevel.title}</span>
+                  <span>{nextLevel.minPoints - totalPoints} ochko kerak</span>
+                </div>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* New Achievement Notification */}
-      {newUnlocks.length > 0 && (
-        <div className="fixed bottom-4 right-4 z-50 space-y-2">
-          {newUnlocks.map(achievementId => {
-            const achievement = achievements.find(a => a.id === achievementId);
-            if (!achievement) return null;
-
-            const Icon = achievement.icon;
-            return (
-              <Card key={achievementId} className="mb-2 border-green-500 shadow-lg animate-bounce">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
-                      <Icon className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Yangi yutuq!</h4>
-                      <p className="text-sm">{achievement.title}</p>
-                    </div>
-                    <Trophy className="h-6 w-6 text-yellow-500" />
+      {/* Achievements Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {achievements.map((achievement) => (
+          <Card 
+            key={achievement.id}
+            className={`transition-all ${achievement.unlocked ? 'ring-2 ring-green-200 bg-green-50' : ''}`}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className={`p-2 rounded-lg ${achievement.unlocked ? 'bg-green-100' : 'bg-gray-100'}`}>
+                  <div className={achievement.unlocked ? 'text-green-600' : 'text-gray-400'}>
+                    {achievement.icon}
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                </div>
+                <Badge className={getRarityBadgeColor(achievement.rarity)}>
+                  {achievement.rarity}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <h3 className="font-semibold text-sm">{achievement.title}</h3>
+                <p className="text-xs text-gray-600">{achievement.description}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span>Jarayon</span>
+                  <span>{achievement.progress}/{achievement.maxProgress}</span>
+                </div>
+                <Progress 
+                  value={(achievement.progress / achievement.maxProgress) * 100} 
+                  className="h-1.5"
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500">
+                  {achievement.points} ochko
+                </span>
+                {achievement.unlocked && (
+                  <Badge variant="secondary" className="text-xs">
+                    ✓ Ochilgan
+                  </Badge>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
