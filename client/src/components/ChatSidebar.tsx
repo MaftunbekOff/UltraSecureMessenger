@@ -13,6 +13,7 @@ import {
   Clock,
   Search
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface User {
   id: string;
@@ -49,6 +50,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<'all' | 'users' | 'groups' | 'channels'>('all');
   // Fetch user's chats
   const { data: chats = [], isLoading: isChatsLoading } = useQuery<ChatWithExtras[]>({
     queryKey: ["/api/chats"],
@@ -57,11 +59,25 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
 
   const filteredChats = chats?.filter(chat => {
     const searchLower = searchQuery.toLowerCase();
-    return (chat.name || '').toLowerCase().includes(searchLower) ||
+    const matchesSearch = (chat.name || '').toLowerCase().includes(searchLower) ||
            chat.participants.some(p =>
              (p.displayName || '').toLowerCase().includes(searchLower) ||
              (p.email || '').toLowerCase().includes(searchLower)
            );
+    
+    if (!matchesSearch) return false;
+    
+    switch (activeTab) {
+      case 'users':
+        return chat.type === 'direct';
+      case 'groups':
+        return chat.type === 'group';
+      case 'channels':
+        return chat.type === 'channel';
+      case 'all':
+      default:
+        return true;
+    }
   }) || [];
 
   const formatTime = (timestamp: string) => {
@@ -108,21 +124,53 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex p-3 border-b">
-        <Button variant="ghost" className="w-full justify-start gap-2 text-gray-600">
-          <Hash className="h-4 w-4" />
+      <div className="grid grid-cols-4 gap-1 p-2 border-b bg-gray-50">
+        <Button 
+          variant={activeTab === 'all' ? 'default' : 'ghost'} 
+          size="sm"
+          className={cn(
+            "justify-center gap-1 text-xs px-2",
+            activeTab === 'all' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+          )}
+          onClick={() => setActiveTab('all')}
+        >
+          <Hash className="h-3 w-3" />
           <span>Barchasi</span>
         </Button>
-        <Button variant="ghost" className="w-full justify-start gap-2 text-gray-600">
-          <Users className="h-4 w-4" />
-          <span>Foydalanuvchilar</span>
+        <Button 
+          variant={activeTab === 'users' ? 'default' : 'ghost'} 
+          size="sm"
+          className={cn(
+            "justify-center gap-1 text-xs px-2",
+            activeTab === 'users' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+          )}
+          onClick={() => setActiveTab('users')}
+        >
+          <MessageCircle className="h-3 w-3" />
+          <span>Odamlar</span>
         </Button>
-        <Button variant="ghost" className="w-full justify-start gap-2 text-gray-600">
-          <Users className="h-4 w-4" />
+        <Button 
+          variant={activeTab === 'groups' ? 'default' : 'ghost'} 
+          size="sm"
+          className={cn(
+            "justify-center gap-1 text-xs px-2",
+            activeTab === 'groups' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+          )}
+          onClick={() => setActiveTab('groups')}
+        >
+          <Users className="h-3 w-3" />
           <span>Guruh</span>
         </Button>
-        <Button variant="ghost" className="w-full justify-start gap-2 text-gray-600">
-          <Hash className="h-4 w-4" />
+        <Button 
+          variant={activeTab === 'channels' ? 'default' : 'ghost'} 
+          size="sm"
+          className={cn(
+            "justify-center gap-1 text-xs px-2",
+            activeTab === 'channels' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+          )}
+          onClick={() => setActiveTab('channels')}
+        >
+          <Hash className="h-3 w-3" />
           <span>Kanal</span>
         </Button>
       </div>
@@ -137,9 +185,23 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
             </div>
           ) : filteredChats.length === 0 ? (
             <div className="text-center py-8 px-4">
-              <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-gray-500">Hali chatlar yo'q</p>
-              <p className="text-xs text-gray-400">Yangi chat boshlash uchun yuqorida qidiring</p>
+              {activeTab === 'users' && <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />}
+              {activeTab === 'groups' && <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />}
+              {activeTab === 'channels' && <Hash className="h-12 w-12 text-gray-300 mx-auto mb-3" />}
+              {activeTab === 'all' && <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />}
+              
+              <p className="text-sm text-gray-500">
+                {activeTab === 'users' && 'Shaxsiy chatlar yo\'q'}
+                {activeTab === 'groups' && 'Guruhlar yo\'q'}
+                {activeTab === 'channels' && 'Kanallar yo\'q'}
+                {activeTab === 'all' && 'Hali chatlar yo\'q'}
+              </p>
+              <p className="text-xs text-gray-400">
+                {activeTab === 'users' && 'Yangi shaxsiy chat boshlang'}
+                {activeTab === 'groups' && 'Yangi guruh yarating'}
+                {activeTab === 'channels' && 'Yangi kanalga qo\'shiling'}
+                {activeTab === 'all' && 'Yangi chat boshlash uchun yuqorida qidiring'}
+              </p>
             </div>
           ) : (
             filteredChats.map((chat) => (
