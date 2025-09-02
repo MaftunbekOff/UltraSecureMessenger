@@ -31,7 +31,7 @@ const EMOJI_PACKS = [
   { name: "Google", set: "google", preview: "😀😍🎉❤️" },
 ];
 
-export function ThemeCustomizer({ onSave }: { onSave: (theme: any) => void }) {
+export function ThemeCustomizer({ onSave }: { onSave?: (theme: any) => void }) {
   const [selectedTheme, setSelectedTheme] = useState(COLOR_THEMES[0]);
   const [selectedBackground, setSelectedBackground] = useState(CHAT_BACKGROUNDS[0]);
   const [selectedEmojiPack, setSelectedEmojiPack] = useState(EMOJI_PACKS[0]);
@@ -45,7 +45,9 @@ export function ThemeCustomizer({ onSave }: { onSave: (theme: any) => void }) {
     };
     
     localStorage.setItem('user-theme', JSON.stringify(customTheme));
-    onSave(customTheme);
+    if (onSave) {
+      onSave(customTheme);
+    }
   };
 
   return (
