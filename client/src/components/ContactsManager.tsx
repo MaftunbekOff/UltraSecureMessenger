@@ -46,7 +46,11 @@ interface Contact {
   mutualFriends: number;
 }
 
-export default function ContactsManager() {
+interface ContactsManagerProps {
+  onChatCreated?: (chatId: string) => void;
+}
+
+export default function ContactsManager({ onChatCreated }: ContactsManagerProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
@@ -141,6 +145,31 @@ export default function ContactsManager() {
     },
   });
 
+  // Create direct chat mutation
+  const createDirectChatMutation = useMutation({
+    mutationFn: async (otherUserId: string) => {
+      const response = await fetch("/api/chats/direct", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ otherUserId }),
+      });
+      if (!response.ok) throw new Error("Failed to create direct chat");
+      return response.json();
+    },
+    onSuccess: (chat) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
+      onChatCreated?.(chat.id);
+      toast({ title: "Chat yaratildi" });
+    },
+    onError: () => {
+      toast({ title: "Xatolik", description: "Chat yaratib bo'lmadi", variant: "destructive" });
+    },
+  });
+
+  const handleStartChat = (contactId: string) => {
+    createDirectChatMutation.mutate(contactId);
+  };
+
   // Filter contacts based on search and filter
   const filteredContacts = contacts.filter((contact: Contact) => {
     const matchesSearch = 
@@ -211,7 +240,7 @@ export default function ContactsManager() {
         <Button
           size="sm"
           variant="ghost"
-          onClick={() => {/* Navigate to chat */}}
+          onClick={() => handleStartChat(contact.id)}
           className="h-8 w-8 p-0"
         >
           <MessageCircle className="h-4 w-4" />

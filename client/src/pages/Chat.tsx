@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +21,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import ContactsManager from "@/components/ContactsManager";
+import GroupsManager from "@/components/GroupsManager";
+import { 
+  Search, 
+  MessageCircle, 
+  Users, 
+  Plus,
+  Hash,
+  Clock
+} from "lucide-react";
 
 export default function Chat() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -29,7 +38,7 @@ export default function Chat() {
   const isMobile = useIsMobile();
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
-  const [currentView, setCurrentView] = useState<'chat' | 'profile' | 'performance' | 'theme' | 'achievements' | 'onboarding'>('chat');
+  const [currentView, setCurrentView] = useState<'chat' | 'profile' | 'performance' | 'theme' | 'achievements' | 'onboarding' | 'contacts' | 'groups'>('chat');
   const queryClient = useQueryClient();
 
   const logoutMutation = useMutation({
@@ -166,6 +175,34 @@ export default function Chat() {
             }}
             onClose={() => setCurrentView('chat')}
           />
+        );
+      case 'contacts':
+        return (
+          <div className="h-screen flex flex-col bg-background">
+            <div className="flex justify-between items-center p-4 border-b bg-white">
+              <h2 className="text-xl font-semibold">Contacts</h2>
+              <Button variant="outline" onClick={() => setCurrentView('chat')}>
+                Back to Chat
+              </Button>
+            </div>
+            <div className="flex-1 overflow-auto">
+              <ContactsManager onChatCreated={handleChatSelect} />
+            </div>
+          </div>
+        );
+      case 'groups':
+        return (
+          <div className="h-screen flex flex-col bg-background">
+            <div className="flex justify-between items-center p-4 border-b bg-white">
+              <h2 className="text-xl font-semibold">Groups</h2>
+              <Button variant="outline" onClick={() => setCurrentView('chat')}>
+                Back to Chat
+              </Button>
+            </div>
+            <div className="flex-1 overflow-auto">
+              <GroupsManager onChatCreated={handleChatSelect} />
+            </div>
+          </div>
         );
       default:
         return renderChatLayout();
@@ -308,11 +345,12 @@ export default function Chat() {
               </DropdownMenu>
             </div>
           </div>
-          
+
           <div className="flex-1 overflow-hidden">
             <ChatSidebar
               selectedChatId={selectedChatId}
               onChatSelect={handleChatSelect}
+              onOpenContacts={() => setCurrentView('contacts')}
             />
           </div>
         </div>

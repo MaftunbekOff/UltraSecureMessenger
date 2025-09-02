@@ -8,10 +8,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ContactsManager from "@/components/ContactsManager";
 import GroupsManager from "@/components/GroupsManager";
-import { 
-  Search, 
-  MessageCircle, 
-  Users, 
+import {
+  Search,
+  MessageCircle,
+  Users,
   Plus,
   Hash,
   Clock
@@ -53,6 +53,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [isContactsOpen, setIsContactsOpen] = useState(false);
 
   // Fetch user's chats
   const { data: chats = [], isLoading: isChatsLoading } = useQuery<ChatWithExtras[]>({
@@ -92,7 +93,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
   const filteredChats = chats?.filter(chat => {
     const searchLower = searchQuery.toLowerCase();
     return (chat.name || '').toLowerCase().includes(searchLower) ||
-           chat.participants.some(p => 
+           chat.participants.some(p =>
              (p.displayName || '').toLowerCase().includes(searchLower) ||
              (p.email || '').toLowerCase().includes(searchLower)
            );
@@ -104,14 +105,14 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
     const diffInHours = Math.abs(now.getTime() - date.getTime()) / 36e5;
 
     if (diffInHours < 24) {
-      return date.toLocaleTimeString('uz-UZ', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
+      return date.toLocaleTimeString('uz-UZ', {
+        hour: '2-digit',
+        minute: '2-digit'
       });
     }
-    return date.toLocaleDateString('uz-UZ', { 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString('uz-UZ', {
+      month: 'short',
+      day: 'numeric'
     });
   };
 
@@ -124,6 +125,14 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
       default:
         return <MessageCircle className="h-4 w-4" />;
     }
+  };
+
+  const onOpenContacts = () => {
+    setIsContactsOpen(true);
+  };
+
+  const onCloseContacts = () => {
+    setIsContactsOpen(false);
   };
 
   return (
@@ -260,7 +269,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
                         <p className="text-xs text-gray-600 truncate mt-1">
                           {chat.lastMessage.sender.id !== user?.id && (
                             <span className="font-medium">
-                              {chat.lastMessage.sender.firstName || chat.lastMessage.sender.email}: 
+                              {chat.lastMessage.sender.firstName || chat.lastMessage.sender.email}:
                             </span>
                           )}
                           {" " + chat.lastMessage.content}
@@ -287,7 +296,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
         </TabsContent>
 
         <TabsContent value="contacts" className="flex-1">
-          <ContactsManager />
+          {isContactsOpen ? <ContactsManager onChatCreated={onChatSelect} /> : null}
         </TabsContent>
 
         <TabsContent value="groups" className="flex-1">
