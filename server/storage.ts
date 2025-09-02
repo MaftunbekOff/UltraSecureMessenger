@@ -1,0 +1,404 @@
+import {
+  users,
+  chats,
+  chatMembers,
+  messages,
+  messageReactions,
+  messageReads,
+  type User,
+  type UpsertUser,
+  type Chat,
+  type InsertChat,
+  type Message,
+  type InsertMessage,
+  type ChatMember,
+  type InsertChatMember,
+  type MessageReaction,
+  type InsertMessageReaction,
+} from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, and, or, like, sql } from "drizzle-orm";
+
+export interface IStorage {
+  // User operations (required for Replit Auth)
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
+  updateUserOnlineStatus(userId: string, isOnline: boolean): Promise<void>;
+  searchUsers(query: string, excludeUserId: string): Promise<User[]>;
+
+  // Chat operations
+  createChat(chat: InsertChat & { createdBy: string }): Promise<Chat>;
+  getUserChats(userId: string): Promise<(Chat & { lastMessage?: Message; unreadCount: number; otherUser?: User })[]>;
+  getChatById(chatId: string): Promise<Chat | undefined>;
+  getChatWithMembers(chatId: string): Promise<(Chat & { members: (ChatMember & { user: User })[] }) | undefined>;
+
+  // Chat member operations
+  addChatMember(member: InsertChatMember): Promise<ChatMember>;
+  removeChatMember(chatId: string, userId: string): Promise<void>;
+  getChatMembers(chatId: string): Promise<(ChatMember & { user: User })[]>;
+  isChatMember(chatId: string, userId: string): Promise<boolean>;
+
+  // Message operations
+  createMessage(message: InsertMessage & { senderId: string }): Promise<Message>;
+  getChatMessages(chatId: string, limit?: number, offset?: number): Promise<(Message & { sender: User; replyTo?: Message })[]>;
+  getMessageById(messageId: string): Promise<Message | undefined>;
+  updateMessage(messageId: string, content: string): Promise<Message | undefined>;
+  deleteMessage(messageId: string): Promise<void>;
+
+  // Message reaction operations
+  addMessageReaction(reaction: InsertMessageReaction & { userId: string }): Promise<MessageReaction>;
+  removeMessageReaction(messageId: string, userId: string, emoji: string): Promise<void>;
+  getMessageReactions(messageId: string): Promise<(MessageReaction & { user: User })[]>;
+
+  // Message read operations
+  markMessageAsRead(messageId: string, userId: string): Promise<void>;
+  markChatAsRead(chatId: string, userId: string): Promise<void>;
+}
+
+export class DatabaseStorage implements IStorage {
+  // User operations
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  async updateUserOnlineStatus(userId: string, isOnline: boolean): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        isOnline,
+        lastSeen: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+  }
+
+  async searchUsers(query: string, excludeUserId: string): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(
+        and(
+          or(
+            like(users.displayName, `%${query}%`),
+            like(users.firstName, `%${query}%`),
+            like(users.lastName, `%${query}%`),
+            like(users.email, `%${query}%`)
+          ),
+          sql`${users.id} != ${excludeUserId}`
+        )
+      )
+      .limit(10);
+  }
+
+  // Chat operations
+  async createChat(chatData: InsertChat & { createdBy: string }): Promise<Chat> {
+    const [chat] = await db
+      .insert(chats)
+      .values(chatData)
+      .returning();
+
+    // Add creator as admin member
+    await this.addChatMember({
+      chatId: chat.id,
+      userId: chatData.createdBy,
+      isAdmin: true,
+    });
+
+    return chat;
+  }
+
+  async getUserChats(userId: string): Promise<(Chat & { lastMessage?: Message; unreadCount: number; otherUser?: User })[]> {
+    const userChatsQuery = await db
+      .select({
+        chat: chats,
+        member: chatMembers,
+      })
+      .from(chatMembers)
+      .innerJoin(chats, eq(chatMembers.chatId, chats.id))
+      .where(eq(chatMembers.userId, userId))
+      .orderBy(desc(chats.updatedAt));
+
+    const chatResults = [];
+
+    for (const { chat } of userChatsQuery) {
+      // Get last message
+      const [lastMessage] = await db
+        .select()
+        .from(messages)
+        .where(and(eq(messages.chatId, chat.id), eq(messages.isDeleted, false)))
+        .orderBy(desc(messages.createdAt))
+        .limit(1);
+
+      // Get unread count
+      const unreadMessages = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(messages)
+        .leftJoin(messageReads, and(
+          eq(messageReads.messageId, messages.id),
+          eq(messageReads.userId, userId)
+        ))
+        .where(and(
+          eq(messages.chatId, chat.id),
+          eq(messages.isDeleted, false),
+          sql`${messageReads.id} IS NULL`,
+          sql`${messages.senderId} != ${userId}`
+        ));
+
+      const unreadCount = unreadMessages[0]?.count || 0;
+
+      // For direct chats, get other user info
+      let otherUser: User | undefined;
+      if (!chat.isGroup) {
+        const otherMember = await db
+          .select({ user: users })
+          .from(chatMembers)
+          .innerJoin(users, eq(chatMembers.userId, users.id))
+          .where(and(
+            eq(chatMembers.chatId, chat.id),
+            sql`${chatMembers.userId} != ${userId}`
+          ))
+          .limit(1);
+
+        otherUser = otherMember[0]?.user;
+      }
+
+      chatResults.push({
+        ...chat,
+        lastMessage,
+        unreadCount,
+        otherUser,
+      });
+    }
+
+    return chatResults;
+  }
+
+  async getChatById(chatId: string): Promise<Chat | undefined> {
+    const [chat] = await db.select().from(chats).where(eq(chats.id, chatId));
+    return chat;
+  }
+
+  async getChatWithMembers(chatId: string): Promise<(Chat & { members: (ChatMember & { user: User })[] }) | undefined> {
+    const [chat] = await db.select().from(chats).where(eq(chats.id, chatId));
+    if (!chat) return undefined;
+
+    const members = await db
+      .select({
+        member: chatMembers,
+        user: users,
+      })
+      .from(chatMembers)
+      .innerJoin(users, eq(chatMembers.userId, users.id))
+      .where(eq(chatMembers.chatId, chatId));
+
+    return {
+      ...chat,
+      members: members.map(({ member, user }) => ({ ...member, user })),
+    };
+  }
+
+  // Chat member operations
+  async addChatMember(member: InsertChatMember): Promise<ChatMember> {
+    const [chatMember] = await db
+      .insert(chatMembers)
+      .values(member)
+      .returning();
+    return chatMember;
+  }
+
+  async removeChatMember(chatId: string, userId: string): Promise<void> {
+    await db
+      .delete(chatMembers)
+      .where(and(
+        eq(chatMembers.chatId, chatId),
+        eq(chatMembers.userId, userId)
+      ));
+  }
+
+  async getChatMembers(chatId: string): Promise<(ChatMember & { user: User })[]> {
+    const members = await db
+      .select({
+        member: chatMembers,
+        user: users,
+      })
+      .from(chatMembers)
+      .innerJoin(users, eq(chatMembers.userId, users.id))
+      .where(eq(chatMembers.chatId, chatId));
+
+    return members.map(({ member, user }) => ({ ...member, user }));
+  }
+
+  async isChatMember(chatId: string, userId: string): Promise<boolean> {
+    const [member] = await db
+      .select()
+      .from(chatMembers)
+      .where(and(
+        eq(chatMembers.chatId, chatId),
+        eq(chatMembers.userId, userId)
+      ));
+    return !!member;
+  }
+
+  // Message operations
+  async createMessage(messageData: InsertMessage & { senderId: string }): Promise<Message> {
+    const [message] = await db
+      .insert(messages)
+      .values(messageData)
+      .returning();
+
+    // Update chat's updatedAt
+    await db
+      .update(chats)
+      .set({ updatedAt: new Date() })
+      .where(eq(chats.id, messageData.chatId));
+
+    return message;
+  }
+
+  async getChatMessages(chatId: string, limit = 50, offset = 0): Promise<(Message & { sender: User; replyTo?: Message })[]> {
+    const messagesData = await db
+      .select({
+        message: messages,
+        sender: users,
+      })
+      .from(messages)
+      .innerJoin(users, eq(messages.senderId, users.id))
+      .where(and(eq(messages.chatId, chatId), eq(messages.isDeleted, false)))
+      .orderBy(desc(messages.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const messagesWithReplies = [];
+
+    for (const { message, sender } of messagesData) {
+      let replyTo: Message | undefined;
+      if (message.replyToId) {
+        const [replyMessage] = await db
+          .select()
+          .from(messages)
+          .where(eq(messages.id, message.replyToId));
+        replyTo = replyMessage;
+      }
+
+      messagesWithReplies.push({
+        ...message,
+        sender,
+        replyTo,
+      });
+    }
+
+    return messagesWithReplies.reverse(); // Return in ascending order
+  }
+
+  async getMessageById(messageId: string): Promise<Message | undefined> {
+    const [message] = await db.select().from(messages).where(eq(messages.id, messageId));
+    return message;
+  }
+
+  async updateMessage(messageId: string, content: string): Promise<Message | undefined> {
+    const [message] = await db
+      .update(messages)
+      .set({
+        content,
+        isEdited: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(messages.id, messageId))
+      .returning();
+    return message;
+  }
+
+  async deleteMessage(messageId: string): Promise<void> {
+    await db
+      .update(messages)
+      .set({
+        isDeleted: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(messages.id, messageId));
+  }
+
+  // Message reaction operations
+  async addMessageReaction(reactionData: InsertMessageReaction & { userId: string }): Promise<MessageReaction> {
+    // Remove existing reaction with same emoji from same user
+    await this.removeMessageReaction(reactionData.messageId, reactionData.userId, reactionData.emoji);
+
+    const [reaction] = await db
+      .insert(messageReactions)
+      .values(reactionData)
+      .returning();
+    return reaction;
+  }
+
+  async removeMessageReaction(messageId: string, userId: string, emoji: string): Promise<void> {
+    await db
+      .delete(messageReactions)
+      .where(and(
+        eq(messageReactions.messageId, messageId),
+        eq(messageReactions.userId, userId),
+        eq(messageReactions.emoji, emoji)
+      ));
+  }
+
+  async getMessageReactions(messageId: string): Promise<(MessageReaction & { user: User })[]> {
+    const reactions = await db
+      .select({
+        reaction: messageReactions,
+        user: users,
+      })
+      .from(messageReactions)
+      .innerJoin(users, eq(messageReactions.userId, users.id))
+      .where(eq(messageReactions.messageId, messageId));
+
+    return reactions.map(({ reaction, user }) => ({ ...reaction, user }));
+  }
+
+  // Message read operations
+  async markMessageAsRead(messageId: string, userId: string): Promise<void> {
+    await db
+      .insert(messageReads)
+      .values({
+        messageId,
+        userId,
+      })
+      .onConflictDoNothing();
+  }
+
+  async markChatAsRead(chatId: string, userId: string): Promise<void> {
+    const unreadMessages = await db
+      .select({ id: messages.id })
+      .from(messages)
+      .leftJoin(messageReads, and(
+        eq(messageReads.messageId, messages.id),
+        eq(messageReads.userId, userId)
+      ))
+      .where(and(
+        eq(messages.chatId, chatId),
+        eq(messages.isDeleted, false),
+        sql`${messageReads.id} IS NULL`,
+        sql`${messages.senderId} != ${userId}`
+      ));
+
+    for (const message of unreadMessages) {
+      await this.markMessageAsRead(message.id, userId);
+    }
+  }
+}
+
+export const storage = new DatabaseStorage();
