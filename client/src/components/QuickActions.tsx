@@ -44,12 +44,16 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
     isPrivate: false,
   });
 
+  const [groupUsernameInput, setGroupUsernameInput] = useState("");
+
   const [channelForm, setChannelForm] = useState({
     name: "",
     description: "",
     username: "",
     isPrivate: false,
   });
+
+  const [channelUsernameInput, setChannelUsernameInput] = useState("");
 
   const [newContactQuery, setNewContactQuery] = useState("");
 
@@ -88,6 +92,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
       queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
       setIsCreateGroupOpen(false);
       setGroupForm({ name: "", description: "", username: "", isPrivate: false });
+      setGroupUsernameInput("");
       toast({ title: "Guruh yaratildi" });
     },
   });
@@ -115,6 +120,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
       queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
       setIsCreateChannelOpen(false);
       setChannelForm({ name: "", description: "", username: "", isPrivate: false });
+      setChannelUsernameInput("");
       toast({ title: "Kanal yaratildi" });
     },
   });
@@ -237,22 +243,23 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 </Label>
                 <Input
                   id="group-username"
-                  placeholder="@group_nomi"
-                  value={groupForm.username}
+                  placeholder="guruh_nomi"
+                  value={groupUsernameInput}
                   onChange={(e) => {
                     let value = e.target.value;
                     
-                    // If user typed @, remove it to get clean value
+                    // Remove @ and group if user types them
                     if (value.startsWith('@')) {
                       value = value.substring(1);
                     }
-                    
-                    // If value already ends with 'group', remove it to avoid duplication
                     if (value.endsWith('group')) {
                       value = value.substring(0, value.length - 5);
                     }
                     
-                    // Store clean value without prefix/suffix for editing
+                    // Update input state with clean value
+                    setGroupUsernameInput(value);
+                    
+                    // Update form with formatted username
                     setGroupForm(prev => ({ 
                       ...prev, 
                       username: value ? `@${value}group` : '' 
@@ -280,13 +287,16 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
               <Switch
                 id="group-private"
                 checked={groupForm.isPrivate}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) => {
                   setGroupForm(prev => ({ 
                     ...prev, 
                     isPrivate: checked,
                     username: checked ? "" : prev.username
-                  }))
-                }
+                  }));
+                  if (checked) {
+                    setGroupUsernameInput("");
+                  }
+                }}
               />
               <Label htmlFor="group-private" className="flex items-center gap-2">
                 {groupForm.isPrivate ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
@@ -298,7 +308,10 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={() => setIsCreateGroupOpen(false)}
+                onClick={() => {
+                  setIsCreateGroupOpen(false);
+                  setGroupUsernameInput("");
+                }}
               >
                 Bekor qilish
               </Button>
@@ -343,22 +356,23 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 </Label>
                 <Input
                   id="channel-username"
-                  placeholder="@channel_nomi"
-                  value={channelForm.username}
+                  placeholder="kanal_nomi"
+                  value={channelUsernameInput}
                   onChange={(e) => {
                     let value = e.target.value;
                     
-                    // If user typed @, remove it to get clean value
+                    // Remove @ and channel if user types them
                     if (value.startsWith('@')) {
                       value = value.substring(1);
                     }
-                    
-                    // If value already ends with 'channel', remove it to avoid duplication
                     if (value.endsWith('channel')) {
                       value = value.substring(0, value.length - 7);
                     }
                     
-                    // Store clean value without prefix/suffix for editing
+                    // Update input state with clean value
+                    setChannelUsernameInput(value);
+                    
+                    // Update form with formatted username
                     setChannelForm(prev => ({ 
                       ...prev, 
                       username: value ? `@${value}channel` : '' 
@@ -386,13 +400,16 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
               <Switch
                 id="channel-private"
                 checked={channelForm.isPrivate}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) => {
                   setChannelForm(prev => ({ 
                     ...prev, 
                     isPrivate: checked,
                     username: checked ? "" : prev.username
-                  }))
-                }
+                  }));
+                  if (checked) {
+                    setChannelUsernameInput("");
+                  }
+                }}
               />
               <Label htmlFor="channel-private" className="flex items-center gap-2">
                 {channelForm.isPrivate ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
@@ -404,7 +421,10 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={() => setIsCreateChannelOpen(false)}
+                onClick={() => {
+                  setIsCreateChannelOpen(false);
+                  setChannelUsernameInput("");
+                }}
               >
                 Bekor qilish
               </Button>
