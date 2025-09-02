@@ -33,8 +33,24 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   displayName: varchar("display_name"),
   bio: text("bio"),
+  statusMessage: varchar("status_message", { length: 100 }),
   isOnline: boolean("is_online").default(false),
   lastSeen: timestamp("last_seen").defaultNow(),
+  presenceStatus: varchar("presence_status").default("online"), // online, away, busy, invisible
+  isVerified: boolean("is_verified").default(false),
+  phoneNumber: varchar("phone_number"),
+  username: varchar("username").unique(),
+  website: varchar("website"),
+  location: varchar("location"),
+  language: varchar("language").default("en"),
+  timezone: varchar("timezone"),
+  profileVisibility: varchar("profile_visibility").default("everyone"), // everyone, contacts, nobody
+  lastSeenVisibility: varchar("last_seen_visibility").default("everyone"),
+  phoneVisibility: varchar("phone_visibility").default("contacts"),
+  emailVisibility: varchar("email_visibility").default("contacts"),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false),
+  profileCompletionScore: integer("profile_completion_score").default(0),
+  joinedAt: timestamp("joined_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -101,6 +117,74 @@ export const usersRelations = relations(users, ({ many }) => ({
   messageReactions: many(messageReactions),
   messageReads: many(messageReads),
   createdChats: many(chats),
+  badges: many(userBadges),
+  statuses: many(userStatuses),
+  statusViews: many(statusViews, { relationName: "viewer" }),
+  contacts: many(userContacts, { relationName: "user" }),
+  contactOf: many(userContacts, { relationName: "contact" }),
+  activities: many(userActivity),
+  profileViews: many(profileViews, { relationName: "profile" }),
+  viewedProfiles: many(profileViews, { relationName: "viewer" }),
+}));
+
+export const userBadgesRelations = relations(userBadges, ({ one }) => ({
+  user: one(users, {
+    fields: [userBadges.userId],
+    references: [users.id],
+  }),
+}));
+
+export const userStatusesRelations = relations(userStatuses, ({ one, many }) => ({
+  user: one(users, {
+    fields: [userStatuses.userId],
+    references: [users.id],
+  }),
+  views: many(statusViews),
+}));
+
+export const statusViewsRelations = relations(statusViews, ({ one }) => ({
+  status: one(userStatuses, {
+    fields: [statusViews.statusId],
+    references: [userStatuses.id],
+  }),
+  viewer: one(users, {
+    fields: [statusViews.viewerId],
+    references: [users.id],
+    relationName: "viewer",
+  }),
+}));
+
+export const userContactsRelations = relations(userContacts, ({ one }) => ({
+  user: one(users, {
+    fields: [userContacts.userId],
+    references: [users.id],
+    relationName: "user",
+  }),
+  contact: one(users, {
+    fields: [userContacts.contactId],
+    references: [users.id],
+    relationName: "contact",
+  }),
+}));
+
+export const userActivityRelations = relations(userActivity, ({ one }) => ({
+  user: one(users, {
+    fields: [userActivity.userId],
+    references: [users.id],
+  }),
+}));
+
+export const profileViewsRelations = relations(profileViews, ({ one }) => ({
+  profileUser: one(users, {
+    fields: [profileViews.profileUserId],
+    references: [users.id],
+    relationName: "profile",
+  }),
+  viewer: one(users, {
+    fields: [profileViews.viewerId],
+    references: [users.id],
+    relationName: "viewer",
+  }),
 }));
 
 export const chatsRelations = relations(chats, ({ one, many }) => ({
@@ -170,6 +254,32 @@ export const insertUserSchema = createInsertSchema(users).pick({
   profileImageUrl: true,
   displayName: true,
   bio: true,
+  statusMessage: true,
+  username: true,
+  phoneNumber: true,
+  website: true,
+  location: true,
+  language: true,
+  timezone: true,
+  profileVisibility: true,
+  lastSeenVisibility: true,
+  phoneVisibility: true,
+  emailVisibility: true,
+});
+
+export const insertUserStatusSchema = createInsertSchema(userStatuses).pick({
+  content: true,
+  mediaUrl: true,
+  mediaType: true,
+  backgroundColor: true,
+  textColor: true,
+  expiresAt: true,
+});
+
+export const insertUserContactSchema = createInsertSchema(userContacts).pick({
+  contactId: true,
+  nickname: true,
+  isFavorite: true,
 });
 
 export const insertChatSchema = createInsertSchema(chats).pick({
@@ -212,3 +322,62 @@ export type InsertChatMember = z.infer<typeof insertChatMemberSchema>;
 export type MessageReaction = typeof messageReactions.$inferSelect;
 export type InsertMessageReaction = z.infer<typeof insertMessageReactionSchema>;
 export type MessageRead = typeof messageReads.$inferSelect;
+// User badges and verification
+export const userBadges = pgTable("user_badges", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  badgeType: varchar("badge_type").notNull(), // verified, developer, premium, early_adopter
+  issuedBy: varchar("issued_by"),
+  issuedAt: timestamp("issued_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+});
+
+// User status updates (stories)
+export const userStatuses = pgTable("user_statuses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  content: text("content"),
+  mediaUrl: varchar("media_url"),
+  mediaType: varchar("media_type"), // image, video, text
+  backgroundColor: varchar("background_color"),
+  textColor: varchar("text_color"),
+  expiresAt: timestamp("expires_at").notNull(),
+  viewCount: integer("view_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Status views tracking
+export const statusViews = pgTable("status_views", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  statusId: varchar("status_id").references(() => userStatuses.id, { onDelete: 'cascade' }).notNull(),
+  viewerId: varchar("viewer_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  viewedAt: timestamp("viewed_at").defaultNow(),
+});
+
+// User contacts/friends
+export const userContacts = pgTable("user_contacts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  contactId: varchar("contact_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  nickname: varchar("nickname"),
+  isFavorite: boolean("is_favorite").default(false),
+  isBlocked: boolean("is_blocked").default(false),
+  addedAt: timestamp("added_at").defaultNow(),
+});
+
+// User activity tracking
+export const userActivity = pgTable("user_activity", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  activityType: varchar("activity_type").notNull(), // message_sent, profile_updated, status_posted
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Profile views tracking
+export const profileViews = pgTable("profile_views", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  profileUserId: varchar("profile_user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  viewerId: varchar("viewer_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  viewedAt: timestamp("viewed_at").defaultNow(),
+});

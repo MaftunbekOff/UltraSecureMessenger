@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, Plus, Settings, Users, MessageCircle, Hash } from "lucide-react";
+import { Settings, Search, Plus, Users, User as UserIcon } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import { cn } from "@/lib/utils";
 import type { Chat, User } from "@shared/schema";
+import ProfileSettings from "./ProfileSettings";
 
 interface ChatSidebarProps {
   selectedChatId: string | null;
@@ -28,7 +29,8 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
   const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<"chats" | "groups" | "channels">("chats");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+  const [showNewChatDialog, setShowNewChatDialog] = useState(false);
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState("");
 
   // Fetch user's chats
@@ -50,7 +52,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
     },
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
-      setIsNewChatOpen(false);
+      setShowNewChatDialog(false);
       setUserSearchQuery("");
       // The response should contain the chat data
       response.json().then((chat: any) => {
@@ -139,12 +141,12 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
             >
               {theme === "light" ? "🌙" : "☀️"}
             </Button>
-            <Button variant="ghost" size="sm" data-testid="button-settings">
+            <Button variant="ghost" size="sm" data-testid="button-settings" onClick={() => setShowProfileSettings(true)}>
               <Settings className="h-4 w-4" />
             </Button>
           </div>
         </div>
-        
+
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -191,7 +193,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
 
       {/* New Chat Button */}
       <div className="p-2 border-b border-border">
-        <Dialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen}>
+        <Dialog open={showNewChatDialog} onOpenChange={setShowNewChatDialog}>
           <DialogTrigger asChild>
             <Button className="w-full" data-testid="button-new-chat">
               <Plus className="h-4 w-4 mr-2" />
@@ -314,11 +316,20 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
               </h4>
               <p className="text-xs text-green-500">Online</p>
             </div>
-            <Button variant="ghost" size="sm" data-testid="button-user-menu">
-              <Settings className="h-4 w-4" />
+            <Button variant="ghost" size="sm" data-testid="button-user-menu" onClick={() => setShowProfileSettings(true)}>
+              <UserIcon className="h-4 w-4" />
             </Button>
           </div>
         </div>
+      )}
+
+      {/* Profile Settings Dialog */}
+      {showProfileSettings && (
+        <Dialog open={showProfileSettings} onOpenChange={setShowProfileSettings}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <ProfileSettings onClose={() => setShowProfileSettings(false)} />
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

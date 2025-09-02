@@ -41,18 +41,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/users/profile', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { displayName, bio } = req.body;
+      const profileData = req.body;
       
-      const user = await storage.upsertUser({
-        id: userId,
-        displayName,
-        bio,
+      // Calculate completion score
+      let completionScore = 0;
+      if (profileData.displayName) completionScore += 15;
+      if (profileData.bio) completionScore += 15;
+      if (profileData.profileImageUrl) completionScore += 20;
+      if (profileData.statusMessage) completionScore += 10;
+      if (profileData.username) completionScore += 15;
+      if (profileData.phoneNumber) completionScore += 10;
+      if (profileData.website) completionScore += 10;
+      if (profileData.location) completionScore += 5;
+      
+      const user = await storage.updateUserProfile(userId, {
+        ...profileData,
+        profileCompletionScore: completionScore,
       });
       
       res.json(user);
     } catch (error) {
       console.error("Error updating profile:", error);
       res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  app.get('/api/users/:userId/profile', isAuthenticated, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const viewerId = req.user.claims.sub;
+      
+      const profile = await storage.getUserProfile(userId, viewerId);
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      res.status(500).json({ message: "Failed to fetch profile" });
+    }
+  });
+
+  // Avatar upload route
+  app.post('/api/upload/avatar', isAuthenticated, upload.single('file'), async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Validate file type
+      if (!req.file.mimetype.startsWith('image/')) {
+        return res.status(400).json({ message: "Only image files are allowed" });
+      }
+      
+      const fileUrl = `/api/files/${req.file.filename}`;
+      
+      // Update user profile with new avatar
+      await storage.updateUserProfile(userId, {
+        profileImageUrl: fileUrl,
+      });
+      
+      res.json({
+        fileUrl,
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+      });
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      res.status(500).json({ message: "Failed to upload avatar" });
+    }
+  });
+
+  // User status routes
+  app.post('/api/users/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const statusData = req.body;
+      
+      const status = await storage.createUserStatus(userId, statusData);
+      res.json(status);
+    } catch (error) {
+      console.error("Error creating status:", error);
+      res.status(500).json({ message: "Failed to create status" });
+    }
+  });
+
+  app.get('/api/users/:userId/statuses', isAuthenticated, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const statuses = await storage.getUserStatuses(userId);
+      res.json(statuses);
+    } catch (error) {
+      console.error("Error fetching statuses:", error);
+      res.status(500).json({ message: "Failed to fetch statuses" });
+    }
+  });
+
+  // Contact management routes
+  app.post('/api/users/contacts', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { contactId, nickname } = req.body;
+      
+      const contact = await storage.addUserContact(userId, contactId, nickname);
+      res.json(contact);
+    } catch (error) {
+      console.error("Error adding contact:", error);
+      res.status(500).json({ message: "Failed to add contact" });
+    }
+  });
+
+  app.get('/api/users/contacts', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const contacts = await storage.getUserContacts(userId);
+      res.json(contacts);
+    } catch (error) {
+      console.error("Error fetching contacts:", error);
+      res.status(500).json({ message: "Failed to fetch contacts" });
+    }
+  });
+
+  app.delete('/api/users/contacts/:contactId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { contactId } = req.params;
+      
+      await storage.removeUserContact(userId, contactId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing contact:", error);
+      res.status(500).json({ message: "Failed to remove contact" });
     }
   });
 

@@ -5,6 +5,10 @@ import {
   messages,
   messageReactions,
   messageReads,
+  userBadges,
+  userStatuses,
+  userContacts,
+  profileViews,
   type User,
   type UpsertUser,
   type Chat,
@@ -17,7 +21,7 @@ import {
   type InsertMessageReaction,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, or, like, sql } from "drizzle-orm";
+import { eq, desc, and, or, like, sql, asc } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -25,6 +29,14 @@ export interface IStorage {
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserOnlineStatus(userId: string, isOnline: boolean): Promise<void>;
   searchUsers(query: string, excludeUserId: string): Promise<User[]>;
+  updateUserProfile(userId: string, profileData: Partial<UpsertUser>): Promise<User>;
+  getUserProfile(userId: string, viewerId?: string): Promise<User & { badges: any[], isContact: boolean, mutualContacts: number }>;
+  createUserStatus(userId: string, statusData: any): Promise<any>;
+  getUserStatuses(userId: string): Promise<any[]>;
+  addUserContact(userId: string, contactId: string, nickname?: string): Promise<any>;
+  getUserContacts(userId: string): Promise<(User & { nickname?: string; isFavorite: boolean })[]>;
+  removeUserContact(userId: string, contactId: string): Promise<void>;
+
 
   // Chat operations
   createChat(chat: InsertChat & { createdBy: string }): Promise<Chat>;
@@ -82,10 +94,155 @@ export class DatabaseStorage implements IStorage {
       .update(users)
       .set({
         isOnline,
-        lastSeen: new Date(),
-        updatedAt: new Date(),
+        lastSeen: isOnline ? undefined : new Date(),
+        updatedAt: new Date()
       })
       .where(eq(users.id, userId));
+  }
+
+  async updateUserProfile(userId: string, profileData: Partial<UpsertUser>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ ...profileData, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async getUserProfile(userId: string, viewerId?: string): Promise<User & { badges: any[], isContact: boolean, mutualContacts: number }> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+
+    if (!user) throw new Error("User not found");
+
+    // Get user badges
+    const badges = await db
+      .select()
+      .from(userBadges)
+      .where(eq(userBadges.userId, userId));
+
+    // Check if viewer is a contact
+    let isContact = false;
+    let mutualContacts = 0;
+
+    if (viewerId && viewerId !== userId) {
+      const [contact] = await db
+        .select()
+        .from(userContacts)
+        .where(and(
+          eq(userContacts.userId, viewerId),
+          eq(userContacts.contactId, userId),
+          eq(userContacts.isBlocked, false)
+        ));
+      isContact = !!contact;
+
+      // Count mutual contacts
+      const mutualContactsResult = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(userContacts)
+        .innerJoin(
+          userContacts as any,
+          and(
+            eq(userContacts.contactId, sql`${userContacts}.contact_id`),
+            eq(userContacts.userId, viewerId),
+            eq(sql`${userContacts}.user_id`, userId)
+          )
+        )
+        .where(and(
+          eq(userContacts.isBlocked, false),
+          eq(sql`${userContacts}.is_blocked`, false)
+        ));
+
+      mutualContacts = mutualContactsResult[0]?.count || 0;
+
+      // Track profile view
+      await db
+        .insert(profileViews)
+        .values({
+          profileUserId: userId,
+          viewerId: viewerId,
+        })
+        .onConflictDoNothing();
+    }
+
+    return {
+      ...user,
+      badges,
+      isContact,
+      mutualContacts,
+    };
+  }
+
+  async createUserStatus(userId: string, statusData: any): Promise<any> {
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24); // 24 hour expiry
+
+    const [status] = await db
+      .insert(userStatuses)
+      .values({
+        ...statusData,
+        userId,
+        expiresAt,
+      })
+      .returning();
+
+    return status;
+  }
+
+  async getUserStatuses(userId: string): Promise<any[]> {
+    return await db
+      .select()
+      .from(userStatuses)
+      .where(and(
+        eq(userStatuses.userId, userId),
+        sql`${userStatuses.expiresAt} > NOW()`
+      ))
+      .orderBy(desc(userStatuses.createdAt));
+  }
+
+  async addUserContact(userId: string, contactId: string, nickname?: string): Promise<any> {
+    const [contact] = await db
+      .insert(userContacts)
+      .values({
+        userId,
+        contactId,
+        nickname,
+      })
+      .returning();
+
+    return contact;
+  }
+
+  async getUserContacts(userId: string): Promise<(User & { nickname?: string; isFavorite: boolean })[]> {
+    const contacts = await db
+      .select({
+        contact: userContacts,
+        user: users,
+      })
+      .from(userContacts)
+      .innerJoin(users, eq(userContacts.contactId, users.id))
+      .where(and(
+        eq(userContacts.userId, userId),
+        eq(userContacts.isBlocked, false)
+      ))
+      .orderBy(asc(users.displayName));
+
+    return contacts.map(({ contact, user }) => ({
+      ...user,
+      nickname: contact.nickname,
+      isFavorite: contact.isFavorite,
+    }));
+  }
+
+  async removeUserContact(userId: string, contactId: string): Promise<void> {
+    await db
+      .delete(userContacts)
+      .where(and(
+        eq(userContacts.userId, userId),
+        eq(userContacts.contactId, contactId)
+      ));
   }
 
   async searchUsers(query: string, excludeUserId: string): Promise<User[]> {
