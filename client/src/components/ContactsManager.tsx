@@ -125,7 +125,7 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
 
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* Search */}
+      {/* Search contacts */}
       <div className="p-3 border-b">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -138,48 +138,7 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
         </div>
       </div>
 
-      {/* New contact section */}
-      <div className="px-3 mb-2">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Yangi kontakt qidirish..."
-            value={userSearchQuery}
-            onChange={(e) => setUserSearchQuery(e.target.value)}
-            className="pl-10 h-9"
-          />
-        </div>
-
-        {/* Search results */}
-        {searchResults.length > 0 && (
-          <div className="mt-2 border rounded-lg bg-white shadow-sm">
-            <ScrollArea className="max-h-32">
-              {searchResults.map((foundUser) => (
-                <div
-                  key={foundUser.id}
-                  className="flex items-center justify-between p-2 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
-                  onClick={() => handleStartChat(foundUser.id)}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
-                      {foundUser.firstName?.charAt(0) || foundUser.email.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">
-                        {foundUser.displayName || foundUser.firstName || foundUser.email}
-                      </p>
-                      <p className="text-xs text-gray-500">@{foundUser.username || foundUser.email}</p>
-                    </div>
-                  </div>
-                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
-            </ScrollArea>
-          </div>
-        )}
-      </div>
+        
 
       {/* Contacts List */}
       <ScrollArea className="flex-1">
