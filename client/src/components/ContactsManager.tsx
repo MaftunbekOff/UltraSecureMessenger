@@ -126,7 +126,7 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Search contacts */}
-      <div className="p-3 border-b">
+      <div className="px-3 py-2 border-b">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
@@ -138,11 +138,9 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
         </div>
       </div>
 
-        
-
       {/* Contacts List */}
       <ScrollArea className="flex-1">
-        <div className="space-y-1 px-2">
+        <div className="space-y-1">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
@@ -158,7 +156,7 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
               <div
                 key={contact.id}
                 onClick={() => handleStartChat(contact.id)}
-                className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
+                className="flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors hover:bg-gray-50"
               >
                 {/* Contact avatar */}
                 <div className="relative">
