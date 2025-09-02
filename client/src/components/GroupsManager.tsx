@@ -8,6 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { 
   Users, 
+  Search,
   Settings, 
   Crown,
   MessageCircle,
@@ -34,6 +35,7 @@ interface GroupsManagerProps {
 
 export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
   const { user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch groups only
   const { data: allGroups = [], isLoading } = useQuery({
@@ -45,109 +47,114 @@ export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
     },
   });
 
-  // Filter to show only groups (not channels)
-  const groups = allGroups.filter((group: Group) => group.isGroup && !group.isChannel);
+  // Filter to show only groups (not channels) and apply search
+  const filteredGroups = allGroups
+    .filter((group: Group) => group.isGroup && !group.isChannel)
+    .filter((group: Group) => 
+      group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      group.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
   const GroupItem = ({ group }: { group: Group }) => (
-    <Card 
-      className="hover:bg-accent cursor-pointer transition-colors"
+    <div
+      className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
       onClick={() => onChatCreated?.(group.id)}
     >
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Avatar className="h-12 w-12">
-              <AvatarImage src={group.avatarUrl} alt={group.name} />
-              <AvatarFallback>
-                <Users className="h-6 w-6" />
-              </AvatarFallback>
-            </Avatar>
-            {group.isPrivate && (
-              <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-1">
-                <Lock className="h-3 w-3 text-muted-foreground" />
-              </div>
-            )}
+      {/* Group avatar */}
+      <div className="relative">
+        <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white font-medium">
+          {group.name.charAt(0).toUpperCase()}
+        </div>
+        {group.isPrivate && (
+          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gray-500 border-2 border-white rounded-full flex items-center justify-center">
+            <Lock className="h-2 w-2 text-white" />
           </div>
+        )}
+      </div>
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="font-medium truncate">{group.name}</h3>
-              {group.isAdmin && <Crown className="h-4 w-4 text-yellow-500" />}
-              {group.unreadCount > 0 && (
-                <Badge variant="destructive" className="text-xs">
-                  {group.unreadCount}
-                </Badge>
-              )}
-            </div>
-
-            <p className="text-sm text-muted-foreground truncate">
-              {group.description || `${group.memberCount} a'zo`}
-            </p>
-
-            <div className="flex items-center gap-4 mt-1">
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Users className="h-3 w-3" />
-                {group.memberCount}
-              </span>
-              {group.lastActivity && (
-                <span className="text-xs text-muted-foreground">
-                  {new Date(group.lastActivity).toLocaleDateString()}
-                </span>
-              )}
-            </div>
-          </div>
-
+      {/* Group info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium text-sm truncate flex items-center gap-1">
+            {group.name}
+            {group.isAdmin && <Crown className="h-3 w-3 text-yellow-500" />}
+          </h3>
           <div className="flex items-center gap-1">
-            <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-              <MessageCircle className="h-4 w-4" />
-            </Button>
-            {group.isAdmin && (
-              <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                <Settings className="h-4 w-4" />
-              </Button>
+            {group.unreadCount > 0 && (
+              <Badge variant="destructive" className="h-5 min-w-5 text-xs px-1">
+                {group.unreadCount > 99 ? "99+" : group.unreadCount}
+              </Badge>
+            )}
+            {group.lastActivity && (
+              <span className="text-xs text-gray-500">
+                {new Date(group.lastActivity).toLocaleDateString()}
+              </span>
             )}
           </div>
         </div>
-      </CardContent>
-    </Card>
+
+        <p className="text-xs text-gray-600 truncate mt-1">
+          {group.description || `${group.memberCount} a'zo`}
+        </p>
+
+        <div className="flex items-center gap-1 mt-1">
+          <Users className="h-4 w-4" />
+          <span className="text-xs text-gray-400">Guruh</span>
+          <span className="text-xs text-gray-400">
+            • {group.memberCount} a'zo
+          </span>
+        </div>
+      </div>
+    </div>
   );
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold">Guruhlar</h2>
+        <h2 className="text-lg font-semibold mb-4">Guruhlar</h2>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Guruhlarni qidiring..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
       </div>
 
       {/* Groups List */}
-      <div className="flex-1 overflow-y-auto p-4">
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        ) : groups.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="mb-4">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto" />
+      <div className="flex-1 overflow-y-auto">
+        <div className="space-y-1 px-2">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
             </div>
-            <h3 className="font-medium mb-2">Guruhlar yo'q</h3>
-            <p className="text-muted-foreground text-sm">
-              Hech qanday guruh mavjud emas
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {groups.map((group: Group) => (
+          ) : filteredGroups.length === 0 ? (
+            <div className="text-center py-8 px-4">
+              <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-sm text-gray-500">
+                {searchQuery ? "Guruh topilmadi" : "Hali guruhlar yo'q"}
+              </p>
+              <p className="text-xs text-gray-400">
+                {searchQuery ? "Boshqa nom bilan qidirib ko'ring" : "Guruh yaratish uchun Quick Actions dan foydalaning"}
+              </p>
+            </div>
+          ) : (
+            filteredGroups.map((group: Group) => (
               <GroupItem key={group.id} group={group} />
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </div>
 
       {/* Stats Footer */}
       <div className="p-4 border-t bg-muted/30">
         <div className="text-center text-sm text-muted-foreground">
-          Jami guruhlar: {groups.length}
+          Jami guruhlar: {filteredGroups.length}
         </div>
       </div>
     </div>
