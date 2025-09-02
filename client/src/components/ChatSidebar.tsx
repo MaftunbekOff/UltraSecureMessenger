@@ -107,7 +107,26 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
         </div>
       </div>
 
-      
+      {/* Navigation Tabs */}
+      <div className="flex p-3 border-b">
+        <Button variant="ghost" className="w-full justify-start gap-2 text-gray-600">
+          <Hash className="h-4 w-4" />
+          <span>Barchasi</span>
+        </Button>
+        <Button variant="ghost" className="w-full justify-start gap-2 text-gray-600">
+          <Users className="h-4 w-4" />
+          <span>Foydalanuvchilar</span>
+        </Button>
+        <Button variant="ghost" className="w-full justify-start gap-2 text-gray-600">
+          <Users className="h-4 w-4" />
+          <span>Guruh</span>
+        </Button>
+        <Button variant="ghost" className="w-full justify-start gap-2 text-gray-600">
+          <Hash className="h-4 w-4" />
+          <span>Kanal</span>
+        </Button>
+      </div>
+
 
       {/* Chat list */}
       <ScrollArea className="flex-1">
