@@ -73,7 +73,7 @@ export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="group-list-container flex flex-col h-full bg-white">
       {/* Search */}
       <div className="px-3 py-1 border-b">
         <div className="relative">

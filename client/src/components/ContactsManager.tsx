@@ -150,9 +150,9 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
             <p className="text-xs text-gray-400">Yangi kontakt qo'shish uchun qidiring</p>
           </div>
         ) : (
-          filteredContacts.map((contact, index) => (
+          filteredContacts.map((contact) => (
             <div
-              key={`contact-${contact.id}-${index}`}
+              key={contact.id}
               onClick={() => handleStartChat(contact.id)}
               className="flex items-center gap-2 px-2 py-1.5 cursor-pointer transition-colors hover:bg-gray-50"
             >

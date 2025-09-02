@@ -151,7 +151,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="chats" className="flex-1 flex flex-col">
+      <Tabs defaultValue="chats" className="flex-1 flex flex-col chat-sidebar-tabs">
         <TabsList className="grid w-full grid-cols-3 mx-3 mt-2">
           <TabsTrigger value="chats" className="text-xs">
             <MessageCircle className="h-3 w-3 mr-1" />
@@ -167,7 +167,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="chats" className="flex-1 flex flex-col p-0">
+        <TabsContent value="chats" className="tabs-content-spacing flex-1 flex flex-col">
           {/* New chat section */}
           <div className="px-3 mb-2">
             <div className="relative">
@@ -295,11 +295,11 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="contacts" className="flex-1 p-0">
+        <TabsContent value="contacts" className="tabs-content-spacing flex-1">
           <ContactsManager onChatCreated={onChatSelect} />
         </TabsContent>
 
-        <TabsContent value="groups" className="flex-1 p-0">
+        <TabsContent value="groups" className="tabs-content-spacing flex-1">
           <GroupsManager onChatCreated={onChatSelect} />
         </TabsContent>
       </Tabs>

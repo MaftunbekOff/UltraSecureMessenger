@@ -77,13 +77,8 @@ const LEVELS = [
   { level: 5, minPoints: 1000, title: 'Messenger ustasi', color: 'bg-yellow-500' },
 ];
 
-export function AchievementSystem({ userStats = {}, onClose }: { userStats?: any; onClose?: () => void }) {
-  const [achievements, setAchievements] = useState(ACHIEVEMENTS);
-  const [totalPoints, setTotalPoints] = useState(0);
-  const [currentLevel, setCurrentLevel] = useState(LEVELS[0]);
-  const [newUnlocks, setNewUnlocks] = useState<string[]>([]);
-
-  // Default user stats if not provided
+// Helper function to calculate stats, used to avoid recalculating in checkAchievements
+const calculateStats = (stats = {}) => {
   const defaultStats = {
     messagesCount: 0,
     friendsCount: 0,
@@ -91,68 +86,117 @@ export function AchievementSystem({ userStats = {}, onClose }: { userStats?: any
     reactionsGiven: 0,
     has2FA: false,
     profileComplete: false,
-    ...userStats
+    ...stats
   };
 
+  let totalPoints = 0;
+  let achievementsProgress = {};
+
+  // Calculate points and progress for each achievement
+  ACHIEVEMENTS.forEach(achievement => {
+    let unlocked = achievement.unlocked;
+    let progress = achievement.progress || 0;
+
+    switch (achievement.id) {
+      case 'first_message':
+        unlocked = defaultStats.messagesCount > 0;
+        break;
+      case 'social_butterfly':
+        progress = defaultStats.friendsCount;
+        unlocked = defaultStats.friendsCount >= 10;
+        break;
+      case 'chat_master':
+        progress = defaultStats.messagesCount;
+        unlocked = defaultStats.messagesCount >= 100;
+        break;
+      case 'group_creator':
+        progress = defaultStats.groupsCreated;
+        unlocked = defaultStats.groupsCreated >= 5;
+        break;
+      case 'reaction_lover':
+        progress = defaultStats.reactionsGiven;
+        unlocked = defaultStats.reactionsGiven >= 50;
+        break;
+      case 'security_champion':
+        unlocked = defaultStats.has2FA && defaultStats.profileComplete;
+        break;
+    }
+
+    if (unlocked) {
+      totalPoints += achievement.points;
+    }
+    achievementsProgress[achievement.id] = { unlocked, progress };
+  });
+
+  return { totalPoints, achievementsProgress };
+};
+
+
+export function AchievementSystem({ userStats = {}, onClose }: { userStats?: any; onClose?: () => void }) {
+  const [achievements, setAchievements] = useState(ACHIEVEMENTS);
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [currentLevel, setCurrentLevel] = useState(LEVELS[0]);
+  const [newUnlocks, setNewUnlocks] = useState<string[]>([]);
+
   const checkAchievements = useCallback(() => {
-    const updatedAchievements = achievements.map(achievement => {
-      let unlocked = achievement.unlocked;
-      let progress = achievement.progress || 0;
+    const { totalPoints: calculatedPoints, achievementsProgress } = calculateStats(userStats);
+    
+    const updatedAchievements = ACHIEVEMENTS.map(achievement => {
+      const progressInfo = achievementsProgress[achievement.id];
+      const isUnlocked = progressInfo.unlocked;
+      const currentProgress = progressInfo.progress;
+      const wasUnlocked = achievements.find(a => a.id === achievement.id)?.unlocked || false;
 
-      switch (achievement.id) {
-        case 'first_message':
-          unlocked = defaultStats.messagesCount > 0;
-          break;
-        case 'social_butterfly':
-          progress = defaultStats.friendsCount;
-          unlocked = defaultStats.friendsCount >= 10;
-          break;
-        case 'chat_master':
-          progress = defaultStats.messagesCount;
-          unlocked = defaultStats.messagesCount >= 100;
-          break;
-        case 'group_creator':
-          progress = defaultStats.groupsCreated;
-          unlocked = defaultStats.groupsCreated >= 5;
-          break;
-        case 'reaction_lover':
-          progress = defaultStats.reactionsGiven;
-          unlocked = defaultStats.reactionsGiven >= 50;
-          break;
-        case 'security_champion':
-          unlocked = defaultStats.has2FA && defaultStats.profileComplete;
-          break;
+      // Check for new unlocks
+      if (isUnlocked && !wasUnlocked) {
+        setNewUnlocks(prev => {
+          // Avoid duplicate notifications if the state hasn't been updated yet
+          if (prev.includes(achievement.id)) return prev;
+          return [...prev, achievement.id];
+        });
       }
 
-      // Check if this is a new unlock
-      if (unlocked && !achievement.unlocked) {
-        setNewUnlocks(prev => [...prev, achievement.id]);
-      }
-
-      return { ...achievement, unlocked, progress };
+      return {
+        ...achievement,
+        unlocked: isUnlocked,
+        progress: currentProgress
+      };
     });
 
-    setAchievements(updatedAchievements);
+    // Only update state if there are actual changes
+    if (JSON.stringify(updatedAchievements) !== JSON.stringify(achievements)) {
+      setAchievements(updatedAchievements);
+    }
 
-    // Calculate total points
-    const points = updatedAchievements
-      .filter(a => a.unlocked)
-      .reduce((sum, a) => sum + a.points, 0);
-    setTotalPoints(points);
+    if (calculatedPoints !== totalPoints) {
+      setTotalPoints(calculatedPoints);
+    }
 
-    // Determine current level
-    const level = LEVELS.reduce((current, level) => 
-      points >= level.minPoints ? level : current
+    const level = LEVELS.reduce((current, level) =>
+      calculatedPoints >= level.minPoints ? level : current
     );
-    setCurrentLevel(level);
-  }, [achievements, userStats]);
+    if (level.level !== currentLevel.level) {
+      setCurrentLevel(level);
+    }
+  }, [userStats, achievements, totalPoints, currentLevel]); // Include dependencies that are used inside
 
   useEffect(() => {
     checkAchievements();
   }, [checkAchievements]);
 
+  // Effect to clear newUnlocks after a delay
+  useEffect(() => {
+    if (newUnlocks.length > 0) {
+      const timer = setTimeout(() => {
+        setNewUnlocks([]);
+      }, 5000); // Clear notifications after 5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [newUnlocks]);
+
+
   const nextLevel = LEVELS.find(l => l.level > currentLevel.level);
-  const progressToNext = nextLevel 
+  const progressToNext = nextLevel
     ? ((totalPoints - currentLevel.minPoints) / (nextLevel.minPoints - currentLevel.minPoints)) * 100
     : 100;
 
@@ -219,8 +263,8 @@ export function AchievementSystem({ userStats = {}, onClose }: { userStats?: any
 
                         {achievement.target && (
                           <div className="mb-2">
-                            <Progress 
-                              value={(achievement.progress! / achievement.target) * 100} 
+                            <Progress
+                              value={achievement.progress !== undefined && achievement.target !== undefined ? (achievement.progress / achievement.target) * 100 : 0}
                               className="h-2"
                             />
                             <p className="text-xs text-muted-foreground mt-1">
@@ -248,14 +292,14 @@ export function AchievementSystem({ userStats = {}, onClose }: { userStats?: any
 
       {/* New Achievement Notification */}
       {newUnlocks.length > 0 && (
-        <div className="fixed bottom-4 right-4 z-50">
+        <div className="fixed bottom-4 right-4 z-50 space-y-2">
           {newUnlocks.map(achievementId => {
             const achievement = achievements.find(a => a.id === achievementId);
             if (!achievement) return null;
 
             const Icon = achievement.icon;
             return (
-              <Card key={achievementId} className="mb-2 border-green-500 shadow-lg animate-pulse">
+              <Card key={achievementId} className="mb-2 border-green-500 shadow-lg animate-bounce">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">

@@ -171,3 +171,23 @@
 * {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
+
+/* Fix spacing issues */
+.tabs-content-spacing {
+  padding: 0;
+  margin: 0;
+}
+
+.chat-sidebar-tabs .tabs-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.contact-list-container, .group-list-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
