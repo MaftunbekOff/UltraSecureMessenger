@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupEmailAuth, isAuthenticated } from "./emailAuth";
+import { setupGoogleAuth, isAuthenticated } from "./googleAuth";
 import { performanceMonitor, trackAPIPerformance } from "./performanceMonitor";
 import { insertChatSchema, insertMessageSchema, insertChatMemberSchema, insertMessageReactionSchema } from "@shared/schema";
 import multer from "multer";
@@ -18,7 +18,7 @@ const upload = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
-  await setupEmailAuth(app);
+  await setupGoogleAuth(app);
   
   // Performance tracking middleware
   app.use(trackAPIPerformance);
