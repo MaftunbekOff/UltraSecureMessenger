@@ -46,7 +46,7 @@ interface Contact {
   mutualFriends: number;
 }
 
-export function ContactsManager() {
+export default function ContactsManager() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
