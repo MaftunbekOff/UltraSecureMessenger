@@ -119,7 +119,7 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
 
   const ContactItem = ({ contact }: { contact: Contact }) => (
     <div 
-      className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
+      className="flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
       onClick={() => handleStartChat(contact.id)}
     >
       <div className="relative">
@@ -156,8 +156,8 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold mb-4">Kontaktlar</h2>
+      <div className="p-2 border-b">
+        <h2 className="text-lg font-semibold mb-2">Kontaktlar</h2>
 
         {/* Search */}
         <div className="relative">
@@ -173,7 +173,7 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
 
       {/* Contacts List */}
       <div className="flex-1 overflow-y-auto">
-        <div className="space-y-1 px-2">
+        <div className="space-y-1">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
@@ -197,7 +197,7 @@ export default function ContactsManager({ onChatCreated }: ContactsManagerProps)
       </div>
 
       {/* Stats Footer */}
-      <div className="p-4 border-t bg-muted/30">
+      <div className="p-2 border-t bg-muted/30">
         <div className="text-center text-sm text-muted-foreground">
           Jami kontaktlar: {contacts.length}
         </div>

@@ -57,7 +57,7 @@ export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
 
   const GroupItem = ({ group }: { group: Group }) => (
     <div
-      className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
+      className="flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
       onClick={() => onChatCreated?.(group.id)}
     >
       {/* Group avatar */}
@@ -111,8 +111,8 @@ export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold mb-4">Guruhlar</h2>
+      <div className="p-2 border-b">
+        <h2 className="text-lg font-semibold mb-2">Guruhlar</h2>
 
         {/* Search */}
         <div className="relative">
@@ -128,7 +128,7 @@ export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
 
       {/* Groups List */}
       <div className="flex-1 overflow-y-auto">
-        <div className="space-y-1 px-2">
+        <div className="space-y-1">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
@@ -152,7 +152,7 @@ export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
       </div>
 
       {/* Stats Footer */}
-      <div className="p-4 border-t bg-muted/30">
+      <div className="p-2 border-t bg-muted/30">
         <div className="text-center text-sm text-muted-foreground">
           Jami guruhlar: {filteredGroups.length}
         </div>
