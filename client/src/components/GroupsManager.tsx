@@ -75,14 +75,14 @@ export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Search */}
-      <div className="p-3 border-b">
+      <div className="px-3 py-1 border-b">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
             placeholder="Guruhlarni qidirish..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-8"
           />
         </div>
       </div>
@@ -105,16 +105,16 @@ export default function GroupsManager({ onChatCreated }: GroupsManagerProps) {
               <div
                 key={group.id}
                 onClick={() => onChatCreated?.(group.id)}
-                className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
+                className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
               >
                 {/* Group avatar */}
                 <div className="relative">
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white font-medium">
+                  <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
                     {group.name.charAt(0).toUpperCase()}
                   </div>
                   {group.isPrivate && (
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gray-500 border-2 border-white rounded-full flex items-center justify-center">
-                      <Lock className="h-2 w-2 text-white" />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-gray-500 border-2 border-white rounded-full flex items-center justify-center">
+                      <Lock className="h-1.5 w-1.5 text-white" />
                     </div>
                   )}
                 </div>

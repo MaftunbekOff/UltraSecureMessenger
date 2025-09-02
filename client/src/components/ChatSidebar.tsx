@@ -9,13 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ContactsManager from "@/components/ContactsManager";
 import GroupsManager from "@/components/GroupsManager";
 import {
-  Search,
   MessageCircle,
   Users,
   Plus,
   Hash,
   Clock
 } from "lucide-react";
+import { Search } from "lucide-react";
 
 interface User {
   id: string;
