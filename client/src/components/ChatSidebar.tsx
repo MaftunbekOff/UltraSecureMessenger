@@ -167,7 +167,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="chats" className="flex-1 flex flex-col mt-2">
+        <TabsContent value="chats" className="flex-1 flex flex-col">
           {/* New chat section */}
           <div className="px-3 mb-2">
             <div className="relative">
@@ -295,11 +295,11 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="contacts" className="flex-1 mt-0">
+        <TabsContent value="contacts" className="flex-1">
           <ContactsManager onChatCreated={onChatSelect} />
         </TabsContent>
 
-        <TabsContent value="groups" className="flex-1 mt-0">
+        <TabsContent value="groups" className="flex-1">
           <GroupsManager onChatCreated={onChatSelect} />
         </TabsContent>
       </Tabs>
