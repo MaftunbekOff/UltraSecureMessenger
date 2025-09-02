@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -175,7 +174,7 @@ export function AchievementSystem({ userStats = {}, onClose }: { userStats?: any
             </div>
             <Badge variant="secondary">{currentLevel.level}-daraja</Badge>
           </div>
-          
+
           {nextLevel && (
             <div>
               <div className="flex justify-between text-sm mb-2">
@@ -208,13 +207,13 @@ export function AchievementSystem({ userStats = {}, onClose }: { userStats?: any
                           achievement.unlocked ? 'text-white' : 'text-gray-500'
                         }`} />
                       </div>
-                      
+
                       <div className="flex-1">
                         <h4 className="font-medium mb-1">{achievement.title}</h4>
                         <p className="text-sm text-muted-foreground mb-2">
                           {achievement.description}
                         </p>
-                        
+
                         {achievement.target && (
                           <div className="mb-2">
                             <Progress 
@@ -226,12 +225,12 @@ export function AchievementSystem({ userStats = {}, onClose }: { userStats?: any
                             </p>
                           </div>
                         )}
-                        
+
                         <Badge variant={achievement.unlocked ? "default" : "secondary"} className="text-xs">
                           {achievement.points} ball
                         </Badge>
                       </div>
-                      
+
                       {achievement.unlocked && (
                         <Star className="h-5 w-5 text-yellow-500 absolute top-2 right-2" />
                       )}
@@ -250,7 +249,7 @@ export function AchievementSystem({ userStats = {}, onClose }: { userStats?: any
           {newUnlocks.map(achievementId => {
             const achievement = achievements.find(a => a.id === achievementId);
             if (!achievement) return null;
-            
+
             const Icon = achievement.icon;
             return (
               <Card key={achievementId} className="mb-2 border-green-500 shadow-lg animate-pulse">
