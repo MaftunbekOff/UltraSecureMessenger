@@ -385,27 +385,7 @@ export default function Chat() {
             {renderCurrentView()}
           </main>
 
-          {/* Settings panel/sidebar for desktop */}
-          {!isMobile && (
-            <aside className="w-[300px] border-l flex flex-col bg-white">
-              {currentView === 'chat' && (
-                <div className="flex flex-col h-full">
-                  {/* Desktop sidebar content */}
-                  <div className="p-4 border-b flex items-center justify-between">
-                    <h2 className="text-lg font-semibold">Muloqotlar</h2>
-                    {/* Placeholder for QuickActions in mobile view */}
-                  </div>
-                  <div className="flex-1 overflow-auto p-2">
-                    <ChatSidebar
-                      selectedChatId={selectedChatId}
-                      onChatSelect={handleChatSelect}
-                      onOpenContacts={() => setCurrentView('contacts')}
-                    />
-                  </div>
-                </div>
-              )}
-            </aside>
-          )}
+          
         </div>
         {/* Toaster and ThemeCustomizer */}
         <Toaster />
