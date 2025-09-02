@@ -91,7 +91,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
   });
 
   const filteredChats = chats.filter(chat =>
-    chat.name.toLowerCase().includes(searchQuery.toLowerCase())
+    chat.name && chat.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const formatTime = (timestamp: string) => {
