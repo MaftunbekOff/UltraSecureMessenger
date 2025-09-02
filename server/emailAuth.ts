@@ -4,6 +4,9 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import type { Express, RequestHandler } from "express";
 import { storage } from "./storage";
+import { db } from "./db";
+import { users } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import crypto from "crypto";
 
 interface JWTPayload {
@@ -79,14 +82,20 @@ export async function setupEmailAuth(app: Express) {
         return res.status(400).json({ message: 'Email formati noto\'g\'ri' });
       }
 
-      // Upsert user with email
-      const user = await storage.upsertUser({
-        id: generateRandomId(),
-        email,
-        firstName: email.split('@')[0],
-        lastName: '',
-        profileImageUrl: null,
-      });
+      // Check if user already exists
+      let user = await db.select().from(users).where(eq(users.email, email)).then(rows => rows[0]);
+      
+      if (!user) {
+        // Create new user if doesn't exist
+        user = await storage.upsertUser({
+          id: generateRandomId(),
+          email,
+          firstName: email.split('@')[0],
+          lastName: '',
+          displayName: email.split('@')[0],
+          profileImageUrl: null,
+        });
+      }
 
       console.log('User created/found:', user.id);
 
