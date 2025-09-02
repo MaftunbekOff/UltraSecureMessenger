@@ -1,11 +1,57 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Shield, MessageCircle, Lock, Users, Zap, Globe, Mail } from "lucide-react";
+import { Shield, MessageCircle, Lock, Users, Zap, Globe, Mail, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function Landing() {
+  const [email, setEmail] = useState("");
+  const { user, isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
+
   const handleLogin = () => {
     window.location.href = "/login";
   };
+
+  const loginMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const response = await fetch('/api/auth/email/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Login failed');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      window.location.href = '/chat';
+    },
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Logout failed');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.clear();
+      window.location.reload();
+    },
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10">
@@ -18,9 +64,34 @@ export default function Landing() {
             </div>
             <h1 className="text-xl font-bold text-foreground">UltraSecure Messenger</h1>
           </div>
-          <Button onClick={handleLogin} data-testid="button-login">
-            Sign In
-          </Button>
+          {!isAuthenticated && (
+            <Button onClick={handleLogin} data-testid="button-login">
+              Sign In
+            </Button>
+          )}
+          {isAuthenticated && (
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-600">
+                Salom, {user?.firstName || user?.email}!
+              </span>
+              <Button
+                onClick={() => window.location.href = '/chat'}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Chatga o'tish
+              </Button>
+              <Button
+                onClick={() => logoutMutation.mutate()}
+                variant="outline"
+                size="sm"
+                disabled={logoutMutation.isPending}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                {logoutMutation.isPending ? "Chiqilmoqda..." : "Chiqish"}
+              </Button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -37,7 +108,7 @@ export default function Landing() {
           </h2>
 
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Experience the next generation of secure communication with end-to-end encryption, 
+            Experience the next generation of secure communication with end-to-end encryption,
             lightning-fast performance, and a beautiful interface designed for the modern world.
           </p>
 

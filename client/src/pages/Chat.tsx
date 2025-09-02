@@ -9,14 +9,36 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { useRouter } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Activity } from "lucide-react";
+import { LogOut } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function Chat() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showPerformanceDashboard, setShowPerformanceDashboard] = useState(false);
+  const queryClient = useQueryClient();
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Logout failed');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.clear();
+      window.location.href = '/';
+    },
+  });
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -108,10 +130,29 @@ export default function Chat() {
       ) : (
         <>
           {/* Desktop: Show both sidebar and chat area */}
-          <ChatSidebar
-            selectedChatId={selectedChatId}
-            onChatSelect={handleChatSelect}
-          />
+          <div className="flex flex-col w-80 border-r bg-white">
+            <div className="p-4 border-b flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-sm">
+                  {user?.firstName || user?.email?.split('@')[0]}
+                </span>
+              </div>
+              <Button
+                onClick={() => logoutMutation.mutate()}
+                variant="ghost"
+                size="sm"
+                disabled={logoutMutation.isPending}
+                className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <LogOut className="h-4 w-4" />
+                {logoutMutation.isPending ? "..." : "Chiqish"}
+              </Button>
+            </div>
+            <ChatSidebar
+              selectedChatId={selectedChatId}
+              onChatSelect={handleChatSelect}
+            />
+          </div>
           <ChatArea chatId={selectedChatId} />
         </>
       )}
