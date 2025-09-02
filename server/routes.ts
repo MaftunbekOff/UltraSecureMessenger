@@ -284,6 +284,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdBy: userId,
       });
       
+      // Automatically add creator as admin member
+      await storage.addChatMember({
+        chatId: chat.id,
+        userId: userId,
+        isAdmin: true,
+      });
+      
       res.json(chat);
     } catch (error) {
       console.error("Error creating chat:", error);

@@ -21,7 +21,15 @@ import {
   type InsertMessageReaction,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, or, like, sql, asc } from "drizzle-orm";
+import { eq, desc, and, or, like, sql, asc, isNull, ne, inArray } from "drizzle-orm";
+
+// Define ChatWithExtras interface for clarity
+interface ChatWithExtras extends Chat {
+  lastMessage: Message | null;
+  unreadCount: number;
+  otherUser?: User;
+  members: (ChatMember & { user: User })[];
+}
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -40,7 +48,7 @@ export interface IStorage {
 
   // Chat operations
   createChat(chat: InsertChat & { createdBy: string }): Promise<Chat>;
-  getUserChats(userId: string): Promise<(Chat & { lastMessage?: Message; unreadCount: number; otherUser?: User })[]>;
+  getUserChats(userId: string): Promise<ChatWithExtras[]>;
   getChatById(chatId: string): Promise<Chat | undefined>;
   getChatWithMembers(chatId: string): Promise<(Chat & { members: (ChatMember & { user: User })[] }) | undefined>;
 
@@ -98,7 +106,7 @@ export class DatabaseStorage implements IStorage {
           .select()
           .from(users)
           .where(eq(users.email, userData.email));
-        
+
         if (existingUser) {
           return existingUser;
         }
@@ -354,70 +362,130 @@ export class DatabaseStorage implements IStorage {
     return chat;
   }
 
-  async getUserChats(userId: string): Promise<(Chat & { lastMessage?: Message; unreadCount: number; otherUser?: User })[]> {
-    const userChatsQuery = await db
+  async getUserChats(userId: string): Promise<ChatWithExtras[]> {
+    const chatsWithMembers = await db
       .select({
-        chat: chats,
-        member: chatMembers,
+        id: chats.id,
+        name: chats.name,
+        description: chats.description,
+        isGroup: chats.isGroup,
+        avatarUrl: chats.avatarUrl,
+        createdBy: chats.createdBy,
+        createdAt: chats.createdAt,
+        updatedAt: chats.updatedAt,
+        member: {
+          id: chatMembers.id,
+          isAdmin: chatMembers.isAdmin,
+          joinedAt: chatMembers.joinedAt,
+        },
+        otherUser: {
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          displayName: users.displayName,
+          profileImageUrl: users.profileImageUrl,
+          isOnline: users.isOnline,
+          lastSeen: users.lastSeen,
+        },
       })
-      .from(chatMembers)
-      .innerJoin(chats, eq(chatMembers.chatId, chats.id))
+      .from(chats)
+      .innerJoin(chatMembers, eq(chatMembers.chatId, chats.id))
+      .leftJoin(
+        users,
+        and(
+          eq(users.id, chatMembers.userId),
+          ne(chatMembers.userId, userId),
+          eq(chats.isGroup, false)
+        )
+      )
       .where(eq(chatMembers.userId, userId))
       .orderBy(desc(chats.updatedAt));
 
-    const chatResults = [];
+    // Group by chat and get latest message for each
+    const chatMap = new Map<string, any>();
 
-    for (const { chat } of userChatsQuery) {
-      // Get last message
-      const [lastMessage] = await db
-        .select()
-        .from(messages)
-        .where(and(eq(messages.chatId, chat.id), eq(messages.isDeleted, false)))
-        .orderBy(desc(messages.createdAt))
-        .limit(1);
-
-      // Get unread count
-      const unreadMessages = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(messages)
-        .leftJoin(messageReads, and(
-          eq(messageReads.messageId, messages.id),
-          eq(messageReads.userId, userId)
-        ))
-        .where(and(
-          eq(messages.chatId, chat.id),
-          eq(messages.isDeleted, false),
-          sql`${messageReads.id} IS NULL`,
-          sql`${messages.senderId} != ${userId}`
-        ));
-
-      const unreadCount = unreadMessages[0]?.count || 0;
-
-      // For direct chats, get other user info
-      let otherUser: User | undefined;
-      if (!chat.isGroup) {
-        const otherMember = await db
-          .select({ user: users })
-          .from(chatMembers)
-          .innerJoin(users, eq(chatMembers.userId, users.id))
-          .where(and(
-            eq(chatMembers.chatId, chat.id),
-            sql`${chatMembers.userId} != ${userId}`
-          ))
-          .limit(1);
-
-        otherUser = otherMember[0]?.user;
+    for (const row of chatsWithMembers) {
+      if (!chatMap.has(row.id)) {
+        chatMap.set(row.id, {
+          ...row,
+          members: [],
+        });
       }
-
-      chatResults.push({
-        ...chat,
-        lastMessage,
-        unreadCount,
-        otherUser,
-      });
     }
 
-    return chatResults;
+    // Get latest messages for all chats
+    const chatIds = Array.from(chatMap.keys());
+    if (chatIds.length === 0) return [];
+
+    const latestMessages = await db
+      .select({
+        chatId: messages.chatId,
+        id: messages.id,
+        content: messages.content,
+        messageType: messages.messageType,
+        fileUrl: messages.fileUrl,
+        fileName: messages.fileName,
+        createdAt: messages.createdAt,
+        senderId: messages.senderId,
+        senderName: users.displayName,
+        senderFirstName: users.firstName,
+      })
+      .from(messages)
+      .innerJoin(users, eq(users.id, messages.senderId))
+      .where(
+        and(
+          inArray(messages.chatId, chatIds),
+          eq(messages.isDeleted, false)
+        )
+      )
+      .orderBy(desc(messages.createdAt));
+
+    // Group messages by chatId and get the latest one
+    const messageMap = new Map<string, any>();
+    for (const msg of latestMessages) {
+      if (!messageMap.has(msg.chatId)) {
+        messageMap.set(msg.chatId, msg);
+      }
+    }
+
+    // Get unread count for each chat
+    const unreadCounts = await db
+      .select({
+        chatId: messages.chatId,
+        count: sql<number>`count(*)`.mapWith(Number),
+      })
+      .from(messages)
+      .leftJoin(
+        messageReads,
+        and(
+          eq(messageReads.messageId, messages.id),
+          eq(messageReads.userId, userId)
+        )
+      )
+      .where(
+        and(
+          inArray(messages.chatId, chatIds),
+          eq(messages.isDeleted, false),
+          isNull(messageReads.id),
+          ne(messages.senderId, userId)
+        )
+      )
+      .groupBy(messages.chatId);
+
+    const unreadMap = new Map<string, number>();
+    for (const unread of unreadCounts) {
+      unreadMap.set(unread.chatId, unread.count);
+    }
+
+    // Combine all data
+    const result: ChatWithExtras[] = Array.from(chatMap.values()).map((chat) => ({
+      ...chat,
+      lastMessage: messageMap.get(chat.id) || null,
+      unreadCount: unreadMap.get(chat.id) || 0,
+    }));
+
+    return result;
   }
 
   async getChatById(chatId: string): Promise<Chat | undefined> {

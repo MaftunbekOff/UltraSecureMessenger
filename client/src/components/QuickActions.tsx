@@ -82,6 +82,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
       setIsCreateGroupOpen(false);
       setGroupForm({ name: "", description: "", isPrivate: false });
       toast({ title: "Guruh yaratildi" });
@@ -107,6 +108,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
       setIsCreateChannelOpen(false);
       setChannelForm({ name: "", description: "", isPrivate: false });
       toast({ title: "Kanal yaratildi" });
