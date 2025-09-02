@@ -60,7 +60,10 @@ export const chats = pgTable("chats", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name"),
   description: text("description"),
+  username: varchar("username").unique(),
   isGroup: boolean("is_group").default(false),
+  isChannel: boolean("is_channel").default(false),
+  isPrivate: boolean("is_private").default(false),
   avatarUrl: varchar("avatar_url"),
   createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
@@ -345,7 +348,10 @@ export const insertUserContactSchema = createInsertSchema(userContacts).pick({
 export const insertChatSchema = createInsertSchema(chats).pick({
   name: true,
   description: true,
+  username: true,
   isGroup: true,
+  isChannel: true,
+  isPrivate: true,
   avatarUrl: true,
 });
 

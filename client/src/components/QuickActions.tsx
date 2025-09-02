@@ -40,12 +40,14 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
   const [groupForm, setGroupForm] = useState({
     name: "",
     description: "",
+    username: "",
     isPrivate: false,
   });
 
   const [channelForm, setChannelForm] = useState({
     name: "",
     description: "",
+    username: "",
     isPrivate: false,
   });
 
@@ -72,6 +74,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
         body: JSON.stringify({
           name: data.name,
           description: data.description,
+          username: data.username,
           isGroup: true,
           isChannel: false,
           isPrivate: data.isPrivate,
@@ -84,7 +87,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
       queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
       queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
       setIsCreateGroupOpen(false);
-      setGroupForm({ name: "", description: "", isPrivate: false });
+      setGroupForm({ name: "", description: "", username: "", isPrivate: false });
       toast({ title: "Guruh yaratildi" });
     },
   });
@@ -98,6 +101,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
         body: JSON.stringify({
           name: data.name,
           description: data.description,
+          username: data.username,
           isGroup: true,
           isChannel: true,
           isPrivate: data.isPrivate,
@@ -110,7 +114,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
       queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
       queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
       setIsCreateChannelOpen(false);
-      setChannelForm({ name: "", description: "", isPrivate: false });
+      setChannelForm({ name: "", description: "", username: "", isPrivate: false });
       toast({ title: "Kanal yaratildi" });
     },
   });
@@ -227,6 +231,29 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="group-username">
+                Username {!groupForm.isPrivate && <span className="text-red-500">*</span>}
+              </Label>
+              <Input
+                id="group-username"
+                placeholder="@username"
+                value={groupForm.username}
+                onChange={(e) => {
+                  let value = e.target.value;
+                  if (value && !value.startsWith('@')) {
+                    value = '@' + value;
+                  }
+                  setGroupForm(prev => ({ ...prev, username: value }));
+                }}
+              />
+              {!groupForm.isPrivate && (
+                <p className="text-xs text-muted-foreground">
+                  Ochiq guruhlar uchun username majburiy
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="group-description">Tavsif (ixtiyoriy)</Label>
               <Textarea
                 id="group-description"
@@ -262,7 +289,11 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
               <Button
                 className="flex-1"
                 onClick={() => createGroupMutation.mutate(groupForm)}
-                disabled={!groupForm.name.trim() || createGroupMutation.isPending}
+                disabled={
+                  !groupForm.name.trim() || 
+                  (!groupForm.isPrivate && !groupForm.username.trim()) ||
+                  createGroupMutation.isPending
+                }
               >
                 {createGroupMutation.isPending ? "Yaratilmoqda..." : "Yaratish"}
               </Button>
@@ -287,6 +318,29 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 value={channelForm.name}
                 onChange={(e) => setChannelForm(prev => ({ ...prev, name: e.target.value }))}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="channel-username">
+                Username {!channelForm.isPrivate && <span className="text-red-500">*</span>}
+              </Label>
+              <Input
+                id="channel-username"
+                placeholder="@username"
+                value={channelForm.username}
+                onChange={(e) => {
+                  let value = e.target.value;
+                  if (value && !value.startsWith('@')) {
+                    value = '@' + value;
+                  }
+                  setChannelForm(prev => ({ ...prev, username: value }));
+                }}
+              />
+              {!channelForm.isPrivate && (
+                <p className="text-xs text-muted-foreground">
+                  Ochiq kanallar uchun username majburiy
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -325,7 +379,11 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
               <Button
                 className="flex-1"
                 onClick={() => createChannelMutation.mutate(channelForm)}
-                disabled={!channelForm.name.trim() || createChannelMutation.isPending}
+                disabled={
+                  !channelForm.name.trim() || 
+                  (!channelForm.isPrivate && !channelForm.username.trim()) ||
+                  createChannelMutation.isPending
+                }
               >
                 {createChannelMutation.isPending ? "Yaratilmoqda..." : "Yaratish"}
               </Button>
