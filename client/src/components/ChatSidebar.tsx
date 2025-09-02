@@ -229,7 +229,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
                     {/* Chat avatar */}
                     <div className="relative">
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
-                        {chat.name.charAt(0).toUpperCase()}
+                        {(chat.name || chat.participants?.[0]?.firstName || chat.participants?.[0]?.email || "U").charAt(0).toUpperCase()}
                       </div>
                       {chat.isOnline && (
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
@@ -240,7 +240,7 @@ export function ChatSidebar({ selectedChatId, onChatSelect }: ChatSidebarProps) 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <h3 className="font-medium text-sm truncate">
-                          {chat.name}
+                          {chat.name || chat.participants?.find(p => p.id !== user?.id)?.displayName || "Unknown Chat"}
                         </h3>
                         <div className="flex items-center gap-1">
                           {chat.unreadCount && chat.unreadCount > 0 && (
