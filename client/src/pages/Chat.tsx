@@ -6,7 +6,7 @@ import { ChatArea } from "@/components/ChatArea";
 import PerformanceDashboard from "@/components/PerformanceDashboard";
 import ProfileSettings from "@/components/ProfileSettings";
 import { OnboardingFlow } from "@/components/OnboardingFlow";
-import { ThemeCustomizer } from "@/components/ThemeCustomizer";
+
 import { AchievementSystem } from "@/components/AchievementSystem";
 import { notificationManager } from "@/utils/notifications";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -40,7 +40,7 @@ export default function Chat() {
   const isMobile = useIsMobile();
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
-  const [currentView, setCurrentView] = useState<'chat' | 'profile' | 'performance' | 'theme' | 'achievements' | 'onboarding' | 'contacts' | 'groups'>('chat');
+  const [currentView, setCurrentView] = useState<'chat' | 'profile' | 'performance' | 'achievements' | 'onboarding' | 'contacts' | 'groups'>('chat');
   const queryClient = useQueryClient();
 
   const logoutMutation = useMutation({
@@ -160,20 +160,7 @@ export default function Chat() {
             </div>
           </div>
         );
-      case 'theme':
-        return (
-          <div className="h-screen flex flex-col bg-background">
-            <div className="flex justify-between items-center p-4 border-b bg-white">
-              <h2 className="text-xl font-semibold">Mavzu sozlamalari</h2>
-              <Button variant="outline" onClick={() => setCurrentView('chat')}>
-                Chatga qaytish
-              </Button>
-            </div>
-            <div className="flex-1 overflow-auto p-4">
-              <ThemeCustomizer />
-            </div>
-          </div>
-        );
+      
       case 'achievements':
         return (
           <AchievementSystem 
@@ -261,10 +248,7 @@ export default function Chat() {
                       <Activity className="h-4 w-4 mr-2" />
                       Samaradorlik
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setCurrentView('theme')}>
-                      <Palette className="h-4 w-4 mr-2" />
-                      Mavzu
-                    </DropdownMenuItem>
+                    
                     <DropdownMenuItem onClick={() => setCurrentView('achievements')}>
                       <Trophy className="h-4 w-4 mr-2" />
                       Yutuqlar
@@ -336,10 +320,7 @@ export default function Chat() {
                     <Activity className="h-4 w-4 mr-2" />
                     Samaradorlik
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setCurrentView('theme')}>
-                    <Palette className="h-4 w-4 mr-2" />
-                    Mavzu sozlamalari
-                  </DropdownMenuItem>
+                  
                   <DropdownMenuItem onClick={() => setCurrentView('achievements')}>
                     <Trophy className="h-4 w-4 mr-2" />
                     Yutuqlar
@@ -387,9 +368,8 @@ export default function Chat() {
 
           
         </div>
-        {/* Toaster and ThemeCustomizer */}
+        {/* Toaster */}
         <Toaster />
-        <ThemeCustomizer />
         <QuickActions
           onNewChat={() => setCurrentView('chat')}
           onNewGroup={() => setCurrentView('groups')}

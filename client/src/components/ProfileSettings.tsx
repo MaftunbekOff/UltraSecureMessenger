@@ -11,9 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Upload, Shield, Eye, Globe, Phone, Mail, User, Camera, Check, X } from "lucide-react";
+import { Camera, Lock, Bell, Shield, Globe, Phone, Mail, MapPin, Palette } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { ThemeCustomizer } from "@/components/ThemeCustomizer";
 
 interface ProfileSettingsProps {
   onClose: () => void;
@@ -153,11 +154,12 @@ export default function ProfileSettings({ onClose }: ProfileSettingsProps) {
       </Card>
 
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="basic">Basic Info</TabsTrigger>
           <TabsTrigger value="privacy">Privacy</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="advanced">Advanced</TabsTrigger>
+          <TabsTrigger value="theme">Mavzu</TabsTrigger>
         </TabsList>
 
         {/* Basic Info Tab */}
@@ -394,40 +396,43 @@ export default function ProfileSettings({ onClose }: ProfileSettingsProps) {
         <TabsContent value="security" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Shield className="h-5 w-5 mr-2" />
-                Security Settings
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Xavfsizlik sozlamalari
               </CardTitle>
-              <CardDescription>Protect your account with additional security measures</CardDescription>
+              <CardDescription>
+                Hisobingizni himoya qilish uchun qo'shimcha xavfsizlik choralarini yoqing
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <Label>Two-Factor Authentication</Label>
-                  <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
+                <div className="space-y-0.5">
+                  <Label htmlFor="two-factor">Ikki faktorli autentifikatsiya</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Hisobingizga kirish uchun qo'shimcha xavfsizlik qatlami
+                  </p>
                 </div>
                 <Switch
+                  id="two-factor"
                   checked={user?.twoFactorEnabled}
                   disabled
                 />
               </div>
 
-              <Separator />
-
-              <div className="space-y-4">
-                <Label>Active Sessions</Label>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Globe className="h-4 w-4" />
-                      <div>
-                        <p className="font-medium">Current Session (Web)</p>
-                        <p className="text-sm text-muted-foreground">Last active: Now</p>
-                      </div>
-                    </div>
-                    <Badge variant="secondary">Active</Badge>
-                  </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="login-alerts">Kirish haqida ogohlantirishlar</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Yangi qurilmadan kirganingizda email yuborish
+                  </p>
                 </div>
+                <Switch id="login-alerts" defaultChecked />
+              </div>
+
+              <div className="pt-4">
+                <Button variant="outline" className="w-full">
+                  Parolni o'zgartirish
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -469,6 +474,24 @@ export default function ProfileSettings({ onClose }: ProfileSettingsProps) {
               <Button variant="destructive" className="w-full">
                 Delete Account
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Theme Tab */}
+        <TabsContent value="theme" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5" />
+                Mavzu sozlamalari
+              </CardTitle>
+              <CardDescription>
+                Interfeys ko'rinishini va ranglarini sozlang
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ThemeCustomizer />
             </CardContent>
           </Card>
         </TabsContent>
