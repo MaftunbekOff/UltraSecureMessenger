@@ -8,9 +8,16 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useRouter } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Activity } from "lucide-react";
-import { LogOut } from "lucide-react";
+import { Activity, LogOut, Settings, User } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function Chat() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -116,10 +123,53 @@ export default function Chat() {
       {isMobile ? (
         <>
           {showSidebar ? (
-            <ChatSidebar
-              selectedChatId={selectedChatId}
-              onChatSelect={handleChatSelect}
-            />
+            <div className="flex flex-col h-full">
+              <div className="p-4 border-b flex items-center justify-between bg-white">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user?.profileImageUrl || ""} />
+                    <AvatarFallback>
+                      {(user?.firstName || user?.email?.split('@')[0] || "U").charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-sm">
+                      {user?.displayName || user?.firstName || user?.email?.split('@')[0]}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      @{user?.username || user?.email?.split('@')[0]}
+                    </span>
+                  </div>
+                </div>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => setShowPerformanceDashboard(true)}>
+                      <Activity className="h-4 w-4 mr-2" />
+                      Performance
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => logoutMutation.mutate()}
+                      disabled={logoutMutation.isPending}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      {logoutMutation.isPending ? "Chiqilmoqda..." : "Tizimdan chiqish"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <ChatSidebar
+                selectedChatId={selectedChatId}
+                onChatSelect={handleChatSelect}
+              />
+            </div>
           ) : (
             <ChatArea
               chatId={selectedChatId}
@@ -132,21 +182,45 @@ export default function Chat() {
           {/* Desktop: Show both sidebar and chat area */}
           <div className="flex flex-col w-80 border-r bg-white">
             <div className="p-4 border-b flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm">
-                  {user?.firstName || user?.email?.split('@')[0]}
-                </span>
+              <div className="flex items-center gap-3">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.profileImageUrl || ""} />
+                  <AvatarFallback>
+                    {(user?.firstName || user?.email?.split('@')[0] || "U").charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-sm">
+                    {user?.displayName || user?.firstName || user?.email?.split('@')[0]}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    @{user?.username || user?.email?.split('@')[0]}
+                  </span>
+                </div>
               </div>
-              <Button
-                onClick={() => logoutMutation.mutate()}
-                variant="ghost"
-                size="sm"
-                disabled={logoutMutation.isPending}
-                className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <LogOut className="h-4 w-4" />
-                {logoutMutation.isPending ? "..." : "Chiqish"}
-              </Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => setShowPerformanceDashboard(true)}>
+                    <Activity className="h-4 w-4 mr-2" />
+                    Performance
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={() => logoutMutation.mutate()}
+                    disabled={logoutMutation.isPending}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    {logoutMutation.isPending ? "Chiqilmoqda..." : "Tizimdan chiqish"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <ChatSidebar
               selectedChatId={selectedChatId}
@@ -157,18 +231,7 @@ export default function Chat() {
         </>
       )}
 
-      {/* Performance monitoring toggle */}
-      <div className="fixed bottom-4 right-4">
-        <Button
-          onClick={() => setShowPerformanceDashboard(true)}
-          variant="outline"
-          size="sm"
-          className="bg-background/80 backdrop-blur-sm"
-        >
-          <Activity className="h-4 w-4 mr-2" />
-          Performance
-        </Button>
-      </div>
+      
     </div>
   );
 }
