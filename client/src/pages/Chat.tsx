@@ -31,6 +31,7 @@ import {
   Hash,
   Clock
 } from "lucide-react";
+import { QuickActions } from "@/components/QuickActions";
 
 export default function Chat() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -373,5 +374,50 @@ export default function Chat() {
     );
   };
 
-  return renderCurrentView();
+  // Render the main app structure including settings and other components
+  const renderApp = () => {
+    return (
+      <ThemeProvider defaultTheme="system" enableSystem>
+        <div className="relative h-screen flex flex-col bg-background">
+          <div className="flex h-full">
+            {/* Main content area */}
+            <main className="flex-1 flex flex-col overflow-hidden">
+              {renderCurrentView()}
+            </main>
+
+            {/* Settings panel/sidebar for desktop */}
+            {!isMobile && (
+              <aside className="w-[300px] border-l flex flex-col bg-white">
+                {currentView === 'chat' && (
+                  <div className="flex flex-col h-full">
+                    {/* Desktop sidebar content */}
+                    <div className="p-4 border-b flex items-center justify-between">
+                      <h2 className="text-lg font-semibold">Muloqotlar</h2>
+                      {/* Placeholder for QuickActions in mobile view */}
+                    </div>
+                    <div className="flex-1 overflow-auto p-2">
+                      <ChatSidebar
+                        selectedChatId={selectedChatId}
+                        onChatSelect={handleChatSelect}
+                        onOpenContacts={() => setCurrentView('contacts')}
+                      />
+                    </div>
+                  </div>
+                )}
+              </aside>
+            )}
+          </div>
+          {/* Toaster and ThemeCustomizer */}
+          <Toaster />
+          <ThemeCustomizer />
+          <QuickActions
+            onNewChat={() => setCurrentView('chat')}
+            onNewGroup={() => setCurrentView('groups')}
+          />
+        </div>
+      </ThemeProvider>
+    );
+  }
+
+  return renderApp();
 }
