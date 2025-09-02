@@ -160,7 +160,7 @@ export default function Landing() {
               <Globe className="h-12 w-12 text-primary mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">Cross-Platform</h3>
               <p className="text-muted-foreground">
-                Access your messages on web, mobile, and desktop. Seamless synchronization across all your devices.
+                Access your messages on web, mobile, and desktop. Seamlessly synchronization across all your devices.
               </p>
             </CardContent>
           </Card>

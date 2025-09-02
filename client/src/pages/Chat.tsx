@@ -4,11 +4,17 @@ import { useToast } from "@/hooks/use-toast";
 import { ChatSidebar } from "@/components/ChatSidebar";
 import { ChatArea } from "@/components/ChatArea";
 import PerformanceDashboard from "@/components/PerformanceDashboard";
+import { ProfileSettings } from "@/components/ProfileSettings";
+import { OnboardingFlow } from "@/components/OnboardingFlow";
+import { QuickActions } from "@/components/QuickActions";
+import { ThemeCustomizer } from "@/components/ThemeCustomizer";
+import { AchievementSystem } from "@/components/AchievementSystem";
+import { notificationManager } from "@/utils/notifications";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useRouter } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Activity, LogOut, Settings, User } from "lucide-react";
+import { Activity, LogOut, Settings, User, BarChart3, Palette, Trophy } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   DropdownMenu,
@@ -26,6 +32,10 @@ export default function Chat() {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showPerformanceDashboard, setShowPerformanceDashboard] = useState(false);
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showThemeCustomizer, setShowThemeCustomizer] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
   const queryClient = useQueryClient();
 
   const logoutMutation = useMutation({
@@ -61,6 +71,20 @@ export default function Chat() {
       return;
     }
   }, [isAuthenticated, isLoading, toast]);
+
+  // Check if user is new and needs onboarding
+  useEffect(() => {
+    const hasSeenOnboarding = localStorage.getItem('seen-onboarding');
+    if (!hasSeenOnboarding && user) {
+      setShowOnboarding(true);
+    }
+
+    // Request notification permission
+    if (user) {
+      notificationManager.requestPermission();
+    }
+  }, [user]);
+
 
   // Handle chat selection
   const handleChatSelect = (chatId: string) => {
@@ -98,6 +122,31 @@ export default function Chat() {
     return null; // Will redirect in useEffect
   }
 
+  if (showOnboarding) {
+    return (
+      <OnboardingFlow onClose={() => setShowOnboarding(false)} />
+    );
+  }
+
+  if (showProfileSettings) {
+    return (
+      <div className="h-screen flex flex-col bg-background">
+        <div className="flex justify-between items-center p-4 border-b">
+          <h2 className="text-xl font-semibold">Profile Settings</h2>
+          <Button
+            variant="outline"
+            onClick={() => setShowProfileSettings(false)}
+          >
+            Back to Chat
+          </Button>
+        </div>
+        <div className="flex-1 overflow-auto">
+          <ProfileSettings />
+        </div>
+      </div>
+    );
+  }
+
   if (showPerformanceDashboard) {
     return (
       <div className="h-screen flex flex-col bg-background">
@@ -114,6 +163,18 @@ export default function Chat() {
           <PerformanceDashboard />
         </div>
       </div>
+    );
+  }
+
+  if (showThemeCustomizer) {
+    return (
+      <ThemeCustomizer onClose={() => setShowThemeCustomizer(false)} />
+    );
+  }
+
+  if (showAchievements) {
+    return (
+      <AchievementSystem onClose={() => setShowAchievements(false)} />
     );
   }
 
@@ -141,7 +202,7 @@ export default function Chat() {
                     </span>
                   </div>
                 </div>
-                
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -149,12 +210,37 @@ export default function Chat() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem onClick={() => setShowPerformanceDashboard(true)}>
-                      <Activity className="h-4 w-4 mr-2" />
+                    <DropdownMenuItem onClick={() => setShowProfileSettings(true)}>
+                      <User className="h-4 w-4 mr-2" />
+                      Profile Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowPerformanceDashboard(true)}
+                      title="Performance Dashboard"
+                    >
+                      <BarChart3 className="h-4 w-4 mr-2" />
                       Performance
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowThemeCustomizer(true)}
+                      title="Mavzu sozlamalari"
+                    >
+                      <Palette className="h-4 w-4 mr-2" />
+                      Mavzu sozlamalari
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowAchievements(true)}
+                      title="Yutuqlar"
+                    >
+                      <Trophy className="h-4 w-4 mr-2" />
+                      Yutuqlar
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
                       onClick={() => logoutMutation.mutate()}
                       disabled={logoutMutation.isPending}
                       className="text-red-600 focus:text-red-600"
@@ -198,7 +284,7 @@ export default function Chat() {
                   </span>
                 </div>
               </div>
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -206,12 +292,35 @@ export default function Chat() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => setShowProfileSettings(true)}>
+                    <User className="h-4 w-4 mr-2" />
+                    Profile Settings
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowPerformanceDashboard(true)}>
                     <Activity className="h-4 w-4 mr-2" />
                     Performance
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowThemeCustomizer(true)}
+                    title="Mavzu sozlamalari"
+                  >
+                    <Palette className="h-4 w-4 mr-2" />
+                    Mavzu sozlamalari
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowAchievements(true)}
+                    title="Yutuqlar"
+                  >
+                    <Trophy className="h-4 w-4 mr-2" />
+                    Yutuqlar
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
                     onClick={() => logoutMutation.mutate()}
                     disabled={logoutMutation.isPending}
                     className="text-red-600 focus:text-red-600"
@@ -231,7 +340,7 @@ export default function Chat() {
         </>
       )}
 
-      
+
     </div>
   );
 }
