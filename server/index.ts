@@ -1,12 +1,18 @@
 
 import express, { type Request, Response, NextFunction } from "express";
+import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { setupSocketIO } from "./websocket";
 import { performanceMonitor } from "./performanceMonitor";
-import cookieParser from "cookie-parser";
 
 function log(message: string) {
-  console.log(message);
+  const formattedTime = new Date().toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+  console.log(`${formattedTime} [express] ${message}`);
 }
 
 const app = express();
@@ -45,33 +51,37 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  console.log('🚀 [Server] Server ishga tushirilmoqda...');
-  const server = await registerRoutes(app);
-  console.log('📋 [Server] Routelar ro\'yxatga olindi');
-
-  // Error handling middleware
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+  try {
+    console.log('🚀 [Server] Server ishga tushirilmoqda...');
     
-    console.error('🚨 [Server] Serverda xatolik yuz berdi:', err);
-    res.status(status).json({ message });
-  });
+    const server = await registerRoutes(app);
+    console.log('📋 [Server] Routelar ro\'yxatga olindi');
 
-  // Setup WebSocket
-  setupSocketIO(server);
-  console.log('🔌 [Server] WebSocket sozlandi');
+    // Error handling middleware
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+      
+      console.error('🚨 [Server] Serverda xatolik yuz berdi:', err);
+      res.status(status).json({ message });
+    });
 
-  // Start performance monitoring
-  performanceMonitor.startMonitoring();
-  console.log('📊 [Server] Performance monitoring boshlandi');
+    // Setup WebSocket
+    setupSocketIO(server);
+    console.log('🔌 [Server] WebSocket sozlandi');
 
-  const PORT = parseInt(process.env.PORT || "5000");
-  server.listen(PORT, "0.0.0.0", () => {
-    console.log(`✅ [Server] Server ishga tushdi: http://0.0.0.0:${PORT}`);
-  });
+    // Start performance monitoring
+    performanceMonitor.startMonitoring();
+    console.log('📊 [Server] Performance monitoring boshlandi');
 
-})().catch((err) => {
-  console.error('🚨 [Server] Server ishga tushirishda xatolik:', err);
-  process.exit(1);
-});
+    const PORT = parseInt(process.env.PORT || "5000");
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log(`✅ [Server] Server muvaffaqiyatli ishga tushdi: http://0.0.0.0:${PORT}`);
+      log(`serving on port ${PORT}`);
+    });
+
+  } catch (error) {
+    console.error('🚨 [Server] Server ishga tushirishda xatolik:', error);
+    process.exit(1);
+  }
+})();
