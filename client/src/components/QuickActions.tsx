@@ -242,8 +242,8 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 </Label>
                 <Input
                   id="group-username"
-                  placeholder="@guruh_nomigroup"
-                  value={groupForm.username}
+                  placeholder="guruh_nomi"
+                  value={groupUsernameInput}
                   onChange={(e) => {
                     let value = e.target.value;
 
@@ -276,7 +276,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                   }}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Guruh username oxirida group bilan tugashi kerak
+                  Username: {groupUsernameInput ? `@${groupUsernameInput}group` : '@username-group'}
                 </p>
               </div>
             )}
@@ -365,8 +365,8 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 </Label>
                 <Input
                   id="channel-username"
-                  placeholder="@kanal_nomichannel"
-                  value={channelForm.username}
+                  placeholder="kanal_nomi"
+                  value={channelUsernameInput}
                   onChange={(e) => {
                     let value = e.target.value;
 
@@ -399,7 +399,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                   }}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Kanal username oxirida channel bilan tugashi kerak
+                  Username: {channelUsernameInput ? `@${channelUsernameInput}channel` : '@username-channel'}
                 </p>
               </div>
             )}
