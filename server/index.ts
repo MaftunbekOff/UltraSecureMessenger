@@ -49,7 +49,6 @@ app.use((req, res, next) => {
     
     console.error('🚨 [Server] Serverda xatolik yuz berdi:', err);
     res.status(status).json({ message });
-  });r;
   });
 
   // importantly only setup vite in development and after
