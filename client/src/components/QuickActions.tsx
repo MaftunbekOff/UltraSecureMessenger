@@ -485,18 +485,18 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                     // Remove invalid characters (only allow letters, numbers, underscore)
                     value = value.replace(/[^a-zA-Z0-9_]/g, '');
 
-                    // Ensure username doesn't start with number or underscore
-                    if (value && /^[0-9_]/.test(value)) {
+                    // Username cannot start with numbers or underscore
+                    if (/^[0-9_]/.test(value)) {
                       value = value.replace(/^[0-9_]+/, '');
                     }
 
-                    // Update input state with clean value
+                    console.log('📝 [QuickActions] Username input o\'zgartirildi:', value);
                     setChannelUsernameInput(value);
 
-                    // Store clean value with prefix/suffix
-                    setChannelForm(prev => ({
-                      ...prev,
-                      username: value ? `@${value}channel` : ''
+                    // Automatically append 'channel' suffix
+                    setChannelForm(prev => ({ 
+                      ...prev, 
+                      username: value ? `${value}channel` : '' 
                     }));
                   }}
                 />
