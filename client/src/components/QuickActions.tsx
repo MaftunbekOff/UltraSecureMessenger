@@ -242,8 +242,8 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 </Label>
                 <Input
                   id="group-username"
-                  placeholder="guruh_nomi"
-                  value={groupUsernameInput}
+                  placeholder="@guruh_nomigroup"
+                  value={groupForm.username}
                   onChange={(e) => {
                     let value = e.target.value;
 
@@ -365,8 +365,8 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 </Label>
                 <Input
                   id="channel-username"
-                  placeholder="kanal_nomi"
-                  value={channelUsernameInput}
+                  placeholder="@kanal_nomichannel"
+                  value={channelForm.username}
                   onChange={(e) => {
                     let value = e.target.value;
 
