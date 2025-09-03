@@ -22,12 +22,16 @@ const queryClient = new QueryClient({
 function AppContent() {
   const { user, isLoading, refetch } = useAuth();
 
+  console.log('🚀 [App] Ilova yuklandi, foydalanuvchi holati:', { user: user?.id, isLoading });
+
   // Check authentication status on mount
   useEffect(() => {
+    console.log('🔐 [App] Autentifikatsiya tekshirilmoqda...');
     refetch();
   }, [refetch]);
 
   if (isLoading) {
+    console.log('⏳ [App] Yuklanish holati ko\'rsatilmoqda...');
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-lg">Yuklanmoqda...</div>
@@ -37,8 +41,11 @@ function AppContent() {
 
   // If user is not authenticated, show login page
   if (!user) {
+    console.log('🔓 [App] Foydalanuvchi tizimga kirmagan, login sahifasi ko\'rsatilmoqda');
     return <LoginPage />;
   }
+
+  console.log('✅ [App] Foydalanuvchi tizimga kirgan, chat interfeysi yuklanmoqda');
 
   return (
     <Router>

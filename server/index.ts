@@ -39,7 +39,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  console.log('🚀 [Server] Server ishga tushirilmoqda...');
   const server = await registerRoutes(app);
+  console.log('📋 [Server] Routelar ro\'yxatga olindi');
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -63,11 +65,13 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
+  console.log(`🌐 [Server] Port ${port}-da server ishga tushirilmoqda...`);
   server.listen({
     port,
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
+    console.log(`✅ [Server] Server muvaffaqiyatli ishga tushdi: http://0.0.0.0:${port}`);
     log(`serving on port ${port}`);
   });
 })();

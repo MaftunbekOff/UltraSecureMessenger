@@ -9,12 +9,12 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { 
-  Plus, 
-  MessageCircle, 
-  Users, 
-  Hash, 
-  UserPlus, 
+import {
+  Plus,
+  MessageCircle,
+  Users,
+  Hash,
+  UserPlus,
   Search,
   Lock,
   Globe,
@@ -144,43 +144,145 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
   });
 
   const actions = [
-    { 
-      icon: MessageCircle, 
-      label: "Yangi chat", 
+    {
+      icon: MessageCircle,
+      label: "Yangi chat",
       action: () => {
         onNewChat?.();
         setIsActionsOpen(false);
-      }, 
-      color: "bg-blue-500" 
+      },
+      color: "bg-blue-500"
     },
-    { 
-      icon: Users, 
-      label: "Yangi guruh", 
+    {
+      icon: Users,
+      label: "Yangi guruh",
       action: () => {
         setIsCreateGroupOpen(true);
         setIsActionsOpen(false);
-      }, 
-      color: "bg-green-500" 
+      },
+      color: "bg-green-500"
     },
-    { 
-      icon: Hash, 
-      label: "Yangi kanal", 
+    {
+      icon: Hash,
+      label: "Yangi kanal",
       action: () => {
         setIsCreateChannelOpen(true);
         setIsActionsOpen(false);
-      }, 
-      color: "bg-purple-500" 
+      },
+      color: "bg-purple-500"
     },
-    { 
-      icon: UserPlus, 
-      label: "Kontakt qo'shish", 
+    {
+      icon: UserPlus,
+      label: "Kontakt qo'shish",
       action: () => {
         setIsAddContactOpen(true);
         setIsActionsOpen(false);
-      }, 
-      color: "bg-orange-500" 
+      },
+      color: "bg-orange-500"
     },
   ];
+
+  // Helper function to reset group form
+  const resetGroupForm = () => {
+    setGroupForm({ name: "", description: "", username: "", isPrivate: false });
+    setGroupUsernameInput("");
+  };
+
+  // Helper function to reset channel form
+  const resetChannelForm = () => {
+    setChannelForm({ name: "", description: "", username: "", isPrivate: false });
+    setChannelUsernameInput("");
+  };
+
+  // Handler for submitting the group creation form
+  const handleGroupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('🏷️ [QuickActions] Guruh yaratish boshlandi:', groupForm);
+    // Removed setIsLoading(true) as it's not defined in this scope and likely handled by useMutation's isPending
+    // setIsLoading(true); 
+
+    try {
+      const response = await fetch("/api/chats", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...groupForm,
+          isGroup: true,
+          isChannel: false,
+        }),
+      });
+
+      console.log('📡 [QuickActions] Guruh yaratish javobi:', response.status);
+
+      if (response.ok) {
+        const newChat = await response.json();
+        console.log('✅ [QuickActions] Guruh muvaffaqiyatli yaratildi:', newChat);
+        // Assuming onChatCreated is a prop, otherwise this might need adjustment
+        // onChatCreated?.(newChat); 
+        queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
+        setIsCreateGroupOpen(false);
+        resetGroupForm();
+        toast({ title: "Guruh yaratildi" });
+      } else {
+        console.error('❌ [QuickActions] Guruh yaratishda xatolik:', response.statusText);
+        toast({ title: "Guruh yaratishda xatolik", variant: "destructive" });
+      }
+    } catch (error) {
+      console.error('🚨 [QuickActions] Guruh yaratishda server xatoligi:', error);
+      toast({ title: "Server xatoligi", variant: "destructive" });
+    } finally {
+      // Removed setIsLoading(false) as it's not defined in this scope and likely handled by useMutation's isPending
+      // setIsLoading(false);
+    }
+  };
+
+  // Handler for submitting the channel creation form
+  const handleChannelSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('📺 [QuickActions] Kanal yaratish boshlandi:', channelForm);
+    // Removed setIsLoading(true) as it's not defined in this scope and likely handled by useMutation's isPending
+    // setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/chats", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...channelForm,
+          isGroup: false, // Assuming channels are not groups by default
+          isChannel: true,
+        }),
+      });
+
+      console.log('📡 [QuickActions] Kanal yaratish javobi:', response.status);
+
+      if (response.ok) {
+        const newChat = await response.json();
+        console.log('✅ [QuickActions] Kanal muvaffaqiyatli yaratildi:', newChat);
+        // Assuming onChatCreated is a prop, otherwise this might need adjustment
+        // onChatCreated?.(newChat); 
+        queryClient.invalidateQueries({ queryKey: ["/api/groups"] }); // Might need specific query for channels
+        queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
+        setIsCreateChannelOpen(false);
+        resetChannelForm();
+        toast({ title: "Kanal yaratildi" });
+      } else {
+        console.error('❌ [QuickActions] Kanal yaratishda xatolik:', response.statusText);
+        toast({ title: "Kanal yaratishda xatolik", variant: "destructive" });
+      }
+    } catch (error) {
+      console.error('🚨 [QuickActions] Kanal yaratishda server xatoligi:', error);
+      toast({ title: "Server xatoligi", variant: "destructive" });
+    } finally {
+      // Removed setIsLoading(false) as it's not defined in this scope and likely handled by useMutation's isPending
+      // setIsLoading(false);
+    }
+  };
 
   return (
     <>
@@ -224,7 +326,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
             <DialogTitle>Yangi guruh yaratish</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <form onSubmit={handleGroupSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="group-name">Guruh nomi</Label>
               <Input
@@ -269,9 +371,9 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                     setGroupUsernameInput(value);
 
                     // Store clean value with prefix/suffix
-                    setGroupForm(prev => ({ 
-                      ...prev, 
-                      username: value ? `@${value}group` : '' 
+                    setGroupForm(prev => ({
+                      ...prev,
+                      username: value ? `@${value}group` : ''
                     }));
                   }}
                 />
@@ -297,8 +399,8 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 id="group-private"
                 checked={groupForm.isPrivate}
                 onCheckedChange={(checked) => {
-                  setGroupForm(prev => ({ 
-                    ...prev, 
+                  setGroupForm(prev => ({
+                    ...prev,
                     isPrivate: checked,
                     username: checked ? "" : prev.username
                   }));
@@ -325,10 +427,10 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 Bekor qilish
               </Button>
               <Button
+                type="submit"
                 className="flex-1"
-                onClick={() => createGroupMutation.mutate(groupForm)}
                 disabled={
-                  !groupForm.name.trim() || 
+                  !groupForm.name.trim() ||
                   (!groupForm.isPrivate && (!groupForm.username.trim() || !groupForm.username.endsWith('group'))) ||
                   createGroupMutation.isPending
                 }
@@ -336,7 +438,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 {createGroupMutation.isPending ? "Yaratilmoqda..." : "Yaratish"}
               </Button>
             </div>
-          </div>
+          </form>
         </DialogContent>
       </Dialog>
 
@@ -347,7 +449,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
             <DialogTitle>Yangi kanal yaratish</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <form onSubmit={handleChannelSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="channel-name">Kanal nomi</Label>
               <Input
@@ -392,9 +494,9 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                     setChannelUsernameInput(value);
 
                     // Store clean value with prefix/suffix
-                    setChannelForm(prev => ({ 
-                      ...prev, 
-                      username: value ? `@${value}channel` : '' 
+                    setChannelForm(prev => ({
+                      ...prev,
+                      username: value ? `@${value}channel` : ''
                     }));
                   }}
                 />
@@ -420,8 +522,8 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 id="channel-private"
                 checked={channelForm.isPrivate}
                 onCheckedChange={(checked) => {
-                  setChannelForm(prev => ({ 
-                    ...prev, 
+                  setChannelForm(prev => ({
+                    ...prev,
                     isPrivate: checked,
                     username: checked ? "" : prev.username
                   }));
@@ -448,10 +550,10 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 Bekor qilish
               </Button>
               <Button
+                type="submit"
                 className="flex-1"
-                onClick={() => createChannelMutation.mutate(channelForm)}
                 disabled={
-                  !channelForm.name.trim() || 
+                  !channelForm.name.trim() ||
                   (!channelForm.isPrivate && (!channelForm.username.trim() || !channelForm.username.endsWith('channel'))) ||
                   createChannelMutation.isPending
                 }
@@ -459,7 +561,7 @@ export function QuickActions({ onNewChat, onNewGroup, onFileUpload }: QuickActio
                 {createChannelMutation.isPending ? "Yaratilmoqda..." : "Yaratish"}
               </Button>
             </div>
-          </div>
+          </form>
         </DialogContent>
       </Dialog>
 
