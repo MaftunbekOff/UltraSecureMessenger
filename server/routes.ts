@@ -704,6 +704,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Handle 404 for API routes
+  app.use('/api/*', (req, res) => {
+    console.log(`❌ [Server] API route topilmadi: ${req.method} ${req.path}`);
+    res.status(404).json({ message: "API endpoint not found" });
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
